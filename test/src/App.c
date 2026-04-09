@@ -1,4 +1,5 @@
 #include "App.h"
+#include "string.h"
 #include "TinyTimber.h"
 #include "canTinyTimber.h"
 #include "sciTinyTimber.h"
@@ -15,9 +16,17 @@ void receiver(App *self, int unused) {
 }
 
 void reader(App *self, int c) {
-  SCI_WRITE(&sci0, "Rcv: \'");
-  SCI_WRITECHAR(&sci0, c);
-  SCI_WRITE(&sci0, "\'\n");
+  SCI_WRITE(&sci0, "Rcv: \'");    // Börja skriv
+  int cnt = 0, num;               // Initiera räknare och int
+  char buffer[20];                // Skapa buffer
+  while (c != 'e' && cnt < 20) {  // Medan escape char inte skickats och buffern fortfarande har plats
+    buffer[cnt] = c;              // Spara char i buffer
+    cnt++;                        // Inkrementera räknare
+    SCI_WRITECHAR(&sci0, c);      // Skriv char i terminal
+  }
+  buffer[cnt + 1] = '\0';         // Stäng sträng
+  num = atoi(buffer);             // Omvandla sträng till int
+  SCI_WRITE(&sci0, "\'\n");       // Avsluta skriv
 }
 
 void startApp(App *self, int arg) {
