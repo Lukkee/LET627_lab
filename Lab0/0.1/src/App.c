@@ -26,8 +26,8 @@ void reader(App *self, int c) {
   } else {
       buffer[cnt] = '\0';                           // Stäng sträng
       int num = atoi(buffer);                       // Omvandla sträng till int
-      char out[30];
-      snprintf(out, sizeof(out), "Number: %d", num);// Skriv ut int i terminal
+      char out[27];
+      snprintf(out, sizeof(out), "Num: %d\n", num); // Skriv ut int i terminal
       SCI_WRITE(&sci0, out);                        // Skriv ut sträng i terminal
       memset(buffer, 0, sizeof(buffer));            // Nollställ buffer
       cnt = 0;                                      // Nollställ räknare
