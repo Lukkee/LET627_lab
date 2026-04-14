@@ -17,16 +17,21 @@ void receiver(App *self, int unused) {
 
 void reader(App *self, int c) {
   SCI_WRITE(&sci0, "Rcv: \'");    // Börja skriv
-  int cnt = 0, num;               // Initiera räknare och int
-  char buffer[20];                // Skapa buffer
-  while (c != 'e' && cnt < 20) {  // Medan escape char inte skickats och buffern fortfarande har plats
+  static int cnt = 0;             // Initiera räknare och int
+  static char buffer[20];         // Skapa buffer
+  if (c != 'e' && cnt < 19) {     // Medan escape char inte skickats och buffern fortfarande har plats
     buffer[cnt] = c;              // Spara char i buffer
     cnt++;                        // Inkrementera räknare
     SCI_WRITECHAR(&sci0, c);      // Skriv char i terminal
+  } else {
+      buffer[cnt] = '\0';                           // Stäng sträng
+      int num = atoi(buffer);                       // Omvandla sträng till int
+      char out[30];
+      snprintf(out, sizeof(out), "Number: %d", num);// Skriv ut int i terminal
+      SCI_WRITE(&sci0, out);                        // Skriv ut sträng i terminal
+      memset(buffer, 0, sizeof(buffer));            // Nollställ buffer
+      cnt = 0;                                      // Nollställ räknare
   }
-  buffer[cnt + 1] = '\0';         // Stäng sträng
-  num = atoi(buffer);             // Omvandla sträng till int
-  SCI_WRITE(&sci0, "\'\n");       // Avsluta skriv
 }
 
 void startApp(App *self, int arg) {
