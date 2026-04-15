@@ -5,7 +5,10 @@
 
 typedef struct {
   Object super;
-  int example;
+  int history[3];
+  int history_index;
+  char buffer[20];
+  int cnt;
 } App;
 
 #define initApp()                                                              \
