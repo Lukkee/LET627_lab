@@ -1,7 +1,7 @@
 #include "App.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "TinyTimber.h"
 #include "canTinyTimber.h"
 #include "sciTinyTimber.h"
@@ -10,18 +10,8 @@ extern App app;
 extern Can can0;
 extern Serial sci0;
 
-/* Från APP_H
-typedef struct {
-  Object super;
-  int history[3];
-  int history_index;
-  char buffer[20];
-  int cnt;
-} App;
-*/
-
 int Sum(App *self) {
-  switch (self->his_index) {
+  switch (self->history_index) {
   case 1: return self->history[2];
   case 2: return (self->history[1] + self->history[2]);
   case 3: return (self->history[0] + self->history[1] + self->history[2]);
@@ -31,8 +21,8 @@ int Sum(App *self) {
 }
 
 int Median(App *self) {
-  if (self->his_index == 1) return self->history[2];
-  else if (self->his_index == 2) return (self->history[2] + self->history[1]) / 2;
+  if (self->history_index == 1) return self->history[2];
+  else if (self->history_index == 2) return (self->history[2] + self->history[1]) / 2;
   else {
     int a = self->history[0]; // Spara för enklare läs/skriv
     int b = self->history[1];
@@ -45,7 +35,7 @@ int Median(App *self) {
 }
 
 void WriteInt( int a ) {
-  char out[16];
+  char out[20];
   snprintf(out, sizeof(out), "%d", a);
   SCI_WRITE(&sci0, out);
 }
@@ -58,46 +48,46 @@ void receiver(App *self, int unused) {
 }
 
 void reader(App *self, int c) {
-SCI_WRITE(&sci0, "Rcv: \'");
-SCI_WRITECHAR(&sci0, c);
-SCI_WRITE(&sci0, "\'\n");
-
-if ( c == 'F' ) { /* RENSA HISTORIK */
-  self->his_index = 0;
-  memset(self->history, 0, sizeof(self->history));
-  memset(self->buffer, 0, sizeof(self->buffer));
-  self->cnt = 0;
-  SCI_WRITE(&sci0, "The 3-history has been erased\n");
-}
-else if ( c != 'e' && self->cnt < 19) { /* FORTSÄTT SKRIVA */
-  self->buffer[self->cnt] = c;
-  self->cnt++;
-}
-else { /* SLUTA SKRIVA */
-  self->buffer[self->cnt] = '\0';
-  int num = atoi(self->buffer);
-  self->cnt = 0;
-  memset(self->buffer, 0, sizeof(self->buffer));
-
-  self->history[0] = self->history[1];
-  self->history[1] = self->history[2];
-  self->history[2] = num;
-
-  if (self->his_index < 3) self->his_index++;
-
-
-  /* SKRIV UT */
-  int s = Sum(self);
-  int m = Median(self);
-
-  SCI_WRITE(&sci0, "Entered integer ");
-  WriteInt(num);
-  SCI_WRITE(&sci0, ": sum = ");
-  WriteInt(s);
-  SCI_WRITE(&sci0, ", median = ");
-  WriteInt(m);
+  SCI_WRITE(&sci0, "Rcv: \'");
+  SCI_WRITECHAR(&sci0, c);
   SCI_WRITE(&sci0, "\'\n");
-}
+
+  if ( c == 'F' ) { /* RENSA HISTORIK */
+    self->history_index = 0;
+    memset(self->history, 0, sizeof(self->history));
+    memset(self->buffer, 0, sizeof(self->buffer));
+    self->cnt = 0;
+    SCI_WRITE(&sci0, "The 3-history has been erased\n");
+  }
+  else if ( c != 'e' && self->cnt < 19) { /* FORTSÄTT SKRIVA */
+    self->buffer[self->cnt] = c;
+    self->cnt++;
+  }
+  else { /* SLUTA SKRIVA */
+    self->buffer[self->cnt] = '\0';
+    int num = atoi(self->buffer);
+    self->cnt = 0;
+    memset(self->buffer, 0, sizeof(self->buffer));
+
+    self->history[0] = self->history[1];
+    self->history[1] = self->history[2];
+    self->history[2] = num;
+
+    if (self->history_index < 3) self->history_index++;
+
+
+    /* SKRIV UT */
+    int s = Sum(self);
+    int m = Median(self);
+
+    SCI_WRITE(&sci0, "Entered integer ");
+    WriteInt(num);
+    SCI_WRITE(&sci0, ": sum = ");
+    WriteInt(s);
+    SCI_WRITE(&sci0, ", median = ");
+    WriteInt(m);
+    SCI_WRITE(&sci0, "\n");
+  }
 }
 
 void startApp(App *self, int arg) {
