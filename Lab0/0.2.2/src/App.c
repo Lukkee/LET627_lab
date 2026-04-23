@@ -39,12 +39,12 @@ void KeyToPeriods(App *self, int key) {
   }
 
   char buffer[32];
-  snprintf(buffer, sizeof(buffer), "Key: %d", key);
+  snprintf(buffer, sizeof(buffer), "Key: %d ", key);
   SCI_WRITE(&sci0, buffer);
 
   for (int i = 0; i < 32; i++) {
     int indice = indices_from_key[i];
-    int period = self->periods[indice + 10];
+    double period = self->periods[indice + 10];
     periods_from_key[i] = period;
 
     snprintf(buffer, sizeof(buffer), " %lf", periods_from_key[i]);
