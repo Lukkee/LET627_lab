@@ -10,6 +10,16 @@ extern App app;
 extern Can can0;
 extern Serial sci0;
 
+/* FRÅN APP_H
+typedef struct {
+  Object super;
+  int history[3];
+  int history_index;
+  char buffer[12];
+  int cnt;
+} App;
+*/
+
 int Sum(App *self) {
   switch (self->history_index) {
   case 1: return self->history[2];
@@ -21,8 +31,8 @@ int Sum(App *self) {
 }
 
 int Median(App *self) {
-  if (self->history_index == 1) return self->history[2];
-  else if (self->history_index == 2) return (self->history[2] + self->history[1]) / 2;
+  if (self->history_index == 1) return self->history[2];    // Enskilt tal
+  else if (self->history_index == 2) return (self->history[2] + self->history[1]) / 2;  // Medelvärde
   else {
     int a = self->history[0]; // Spara för enklare läs/skriv
     int b = self->history[1];
@@ -35,7 +45,7 @@ int Median(App *self) {
 }
 
 void WriteInt( int a ) {
-  char out[20];
+  char out[12];
   snprintf(out, sizeof(out), "%d", a);
   SCI_WRITE(&sci0, out);
 }
@@ -53,32 +63,32 @@ void reader(App *self, int c) {
   SCI_WRITE(&sci0, "\'\n");
 
   if ( c == 'F' ) { /* RENSA HISTORIK */
-    self->history_index = 0;
-    memset(self->history, 0, sizeof(self->history));
-    memset(self->buffer, 0, sizeof(self->buffer));
-    self->cnt = 0;
+    self->history_index = 0;                          // Nollställ history_index
+    memset(self->history, 0, sizeof(self->history));  // Rensa history
+    memset(self->buffer, 0, sizeof(self->buffer));    // Rensa buffer
+    self->cnt = 0;                                    // Nollställ cnt
     SCI_WRITE(&sci0, "The 3-history has been erased\n");
   }
-  else if ( c != 'e' && self->cnt < 19) { /* FORTSÄTT SKRIVA */
-    self->buffer[self->cnt] = c;
-    self->cnt++;
+  else if ( c != 'e' && self->cnt < 11) { /* FORTSÄTT SKRIVA */
+    self->buffer[self->cnt] = c;    // spara char till buffer[cnt]
+    self->cnt++;                    // öka cnt
   }
   else { /* SLUTA SKRIVA */
-    self->buffer[self->cnt] = '\0';
-    int num = atoi(self->buffer);
-    self->cnt = 0;
-    memset(self->buffer, 0, sizeof(self->buffer));
+    self->buffer[self->cnt] = '\0';                 // null-terminator
+    int num = atoi(self->buffer);                   // ASCII to Integer(buffer)
+    self->cnt = 0;                                  // Nollställ cnt
+    memset(self->buffer, 0, sizeof(self->buffer));  // Rensa buffer
 
     self->history[0] = self->history[1];
-    self->history[1] = self->history[2];
-    self->history[2] = num;
+    self->history[1] = self->history[2];  // Flytta bak rest
+    self->history[2] = num;               // Nytt värde i [2]
 
-    if (self->history_index < 3) self->history_index++;
+    if (self->history_index < 3) self->history_index++;   // Håll koll på första tre för särskilda fall i median och summa
 
 
     /* SKRIV UT */
-    int s = Sum(self);
-    int m = Median(self);
+    int s = Sum(self);    // Hämta summan
+    int m = Median(self); // Hämta medianen
 
     SCI_WRITE(&sci0, "Entered integer ");
     WriteInt(num);
