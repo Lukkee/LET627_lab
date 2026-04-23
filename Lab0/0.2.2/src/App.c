@@ -30,6 +30,8 @@ int Sum(App *self) {
   }
 }
 
+
+
 int Median(App *self) {
   if (self->history_index == 1) return self->history[2];    // Enskilt tal
   else if (self->history_index == 2) return (self->history[2] + self->history[1]) / 2;  // Medelvärde
@@ -102,6 +104,11 @@ void reader(App *self, int c) {
 
 void startApp(App *self, int arg) {
   CANMsg msg;
+
+  int tmp_indice[] = {0, 2, 4, 0, 0, 2, 4, 0, 4, 5, 7, 4, 5, 7, 7, 9, 7, 5, 4, 0, 7, 9, 7, 5, 4, 0, 0, -5, 0, 0, -5, 0};
+  memcpy(self->indices, tmp_indice, 32);
+  double tmp_periods[] = {2551.05, 2407.87, 2272.73, 2145.17, 2024.77, 1911.13, 1803.86, 1702.62, 1607.06, 1516.86, 1431.73, 1351.37, 1275.53, 1203.94, 1136.36, 1072.58, 1012.38, 955.56, 901.93, 851.31, 803.53, 758.43, 715.86, 675.69, 637.76};
+  memcpy(self->periods, tmp_periods, 25);
 
   CAN_INIT(&can0);
   SCI_INIT(&sci0);
