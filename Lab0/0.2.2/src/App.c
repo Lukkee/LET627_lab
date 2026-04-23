@@ -33,22 +33,25 @@ int Sum(App *self) {
 void KeyToPeriods(App *self, int key) {
   double periods_from_key[32];
   int indices_from_key[32];
-  
+
   for (int i = 0; i < 32; i++) {
     indices_from_key[i] = self->indices[i] + key;
   }
 
-  char buffer[16];
+  char buffer[32];
   snprintf(buffer, sizeof(buffer), "Key: %d", key);
   SCI_WRITE(&sci0, buffer);
 
   for (int i = 0; i < 32; i++) {
-    periods_from_key[i] = self->periods[indices_from_key[i]];
+    int indice = indices_from_key[i];
+    int period = self->periods[indice + 10];
+    periods_from_key[i] = period;
+
     snprintf(buffer, sizeof(buffer), " %lf", periods_from_key[i]);
     SCI_WRITE(&sci0, buffer);
   }
 
-  SCI_WRITECHAR(&sci0, "\n");
+  SCI_WRITE(&sci0, "\n");
 
   /*
   Print out the periods as follows: First print ”Key: ” followed by the chosen
@@ -136,9 +139,33 @@ void startApp(App *self, int arg) {
   CANMsg msg;
 
   int tmp_indice[] = {0, 2, 4, 0, 0, 2, 4, 0, 4, 5, 7, 4, 5, 7, 7, 9, 7, 5, 4, 0, 7, 9, 7, 5, 4, 0, 0, -5, 0, 0, -5, 0};
-  memcpy(self->indices, tmp_indice, 32);
-  double tmp_periods[] = {2551.05, 2407.87, 2272.73, 2145.17, 2024.77, 1911.13, 1803.86, 1702.62, 1607.06, 1516.86, 1431.73, 1351.37, 1275.53, 1203.94, 1136.36, 1072.58, 1012.38, 955.56, 901.93, 851.31, 803.53, 758.43, 715.86, 675.69, 637.76};
-  memcpy(self->periods, tmp_periods, 25);
+  memcpy(self->indices, tmp_indice, sizeof(tmp_indice));
+  double tmp_periods[] = {0.002273,
+                          0.002145,
+                          0.002025,
+                          0.001911,
+                          0.001804,
+                          0.001703,
+                          0.001607,
+                          0.001517,
+                          0.001432,
+                          0.001351,
+                          0.001276,
+                          0.001204,
+                          0.001136,
+                          0.001073,
+                          0.001012,
+                          0.000956,
+                          0.000902,
+                          0.000851,
+                          0.000804,
+                          0.000758,
+                          0.000716,
+                          0.000676,
+                          0.000638,
+                          0.000602
+                          };
+  memcpy(self->periods, tmp_periods, sizeof(tmp_periods));
 
   CAN_INIT(&can0);
   SCI_INIT(&sci0);
