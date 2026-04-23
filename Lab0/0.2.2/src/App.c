@@ -50,8 +50,6 @@ void KeyToPeriods(App *self, int key) {
 
   SCI_WRITECHAR(&sci0, "\n");
 
-
-
   /*
   Print out the periods as follows: First print ”Key: ” followed by the chosen
   key value and a line break. Then print the 32 period values on one line, each
@@ -87,6 +85,9 @@ void receiver(App *self, int unused) {
   SCI_WRITE(&sci0, msg.buff);
 }
 
+
+  // RECIEVE
+
 void reader(App *self, int c) {
   SCI_WRITE(&sci0, "Rcv: \'");
   SCI_WRITECHAR(&sci0, c);
@@ -115,18 +116,19 @@ void reader(App *self, int c) {
 
     if (self->history_index < 3) self->history_index++;   // Håll koll på första tre för särskilda fall i median och summa
 
+    KeyToPeriods(self, num);
 
     /* SKRIV UT */
-    int s = Sum(self);    // Hämta summan
-    int m = Median(self); // Hämta medianen
-
-    SCI_WRITE(&sci0, "Entered integer ");
-    WriteInt(num);
-    SCI_WRITE(&sci0, ": sum = ");
-    WriteInt(s);
-    SCI_WRITE(&sci0, ", median = ");
-    WriteInt(m);
-    SCI_WRITE(&sci0, "\n");
+//    int s = Sum(self);    // Hämta summan
+//    int m = Median(self); // Hämta medianen
+//
+//    SCI_WRITE(&sci0, "Entered integer ");
+//    WriteInt(num);
+//    SCI_WRITE(&sci0, ": sum = ");
+//    WriteInt(s);
+//    SCI_WRITE(&sci0, ", median = ");
+//    WriteInt(m);
+//    SCI_WRITE(&sci0, "\n");
   }
 }
 
