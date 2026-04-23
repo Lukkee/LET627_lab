@@ -30,7 +30,35 @@ int Sum(App *self) {
   }
 }
 
+void KeyToPeriods(App *self, int key) {
+  double periods_from_key[32];
+  int indices_from_key[32];
+  
+  for (int i = 0; i < 32; i++) {
+    indices_from_key[i] = self->indices[i] + key;
+  }
 
+  char buffer[16];
+  snprintf(buffer, sizeof(buffer), "Key: %d", key);
+  SCI_WRITE(&sci0, buffer);
+
+  for (int i = 0; i < 32; i++) {
+    periods_from_key[i] = self->periods[indices_from_key[i]];
+    snprintf(buffer, sizeof(buffer), " %lf", periods_from_key[i]);
+    SCI_WRITE(&sci0, buffer);
+  }
+
+  SCI_WRITECHAR(&sci0, "\n");
+
+
+
+  /*
+  Print out the periods as follows: First print ”Key: ” followed by the chosen
+  key value and a line break. Then print the 32 period values on one line, each
+  value separated by a space character, and terminate with a line break.
+  */
+
+}
 
 int Median(App *self) {
   if (self->history_index == 1) return self->history[2];    // Enskilt tal
