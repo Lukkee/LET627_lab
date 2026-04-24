@@ -32,24 +32,20 @@ int Sum(App *self) {
 
 void KeyToPeriods(App *self, int key) {
 
+  // Om key är utanför [-5, 5]
   if (key < -5 || key > 5) {
     SCI_WRITE(&sci0, "Key must be within [-5, 5]\n");
     return;
   }
 
   double periods_from_key[32];
-  int indices_from_key[32];
-
-  for (int i = 0; i < 32; i++) {
-    indices_from_key[i] = self->indices[i] + key;
-  }
 
   char buffer[32];
   snprintf(buffer, sizeof(buffer), "Key: %d ", key);
   SCI_WRITE(&sci0, buffer);
 
   for (int i = 0; i < 32; i++) {
-    int indice = indices_from_key[i];
+    int indice = self->indices[i] + key;
     double period = self->periods[indice + 10];
     periods_from_key[i] = period;
     int p_ns = period * 1e6;
