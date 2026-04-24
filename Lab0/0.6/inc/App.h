@@ -9,6 +9,8 @@ typedef struct {
   int history_index;
   char buffer[12];
   int cnt;
+  int indices[32];
+  int periods[25];
 } App;
 
 #define initApp()                                                              \

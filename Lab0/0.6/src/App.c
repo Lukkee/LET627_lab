@@ -30,6 +30,39 @@ int Sum(App *self) {
   }
 }
 
+void KeyToPeriods(App *self, int key) {
+
+  // Om key är utanför [-5, 5]
+  if (key < -5 || key > 5) {
+    SCI_WRITE(&sci0, "Key must be within [-5, 5]\n");
+    return;
+  }
+
+  double periods_from_key[32];
+
+  char buffer[32];
+  snprintf(buffer, sizeof(buffer), "Key: %d ", key);
+  SCI_WRITE(&sci0, buffer);
+
+  for (int i = 0; i < 32; i++) {
+    int indice = self->indices[i] + key;
+    int period = self->periods[indice + 10];
+    periods_from_key[i] = period;
+
+    snprintf(buffer, sizeof(buffer), " %d", period);
+    SCI_WRITE(&sci0, buffer);
+  }
+
+  SCI_WRITE(&sci0, "\n");
+
+  /*
+  Print out the periods as follows: First print ”Key: ” followed by the chosen
+  key value and a line break. Then print the 32 period values on one line, each
+  value separated by a space character, and terminate with a line break.
+  */
+
+}
+
 int Median(App *self) {
   if (self->history_index == 1) return self->history[2];    // Enskilt tal
   else if (self->history_index == 2) return (self->history[2] + self->history[1]) / 2;  // Medelvärde
@@ -88,22 +121,55 @@ void reader(App *self, int c) {
 
     if (self->history_index < 3) self->history_index++;   // Håll koll på första tre för särskilda fall i median och summa
 
-    /* SKRIV UT */
-    int s = Sum(self);    // Hämta summan
-    int m = Median(self); // Hämta medianen
+    KeyToPeriods(self, num);
 
-    SCI_WRITE(&sci0, "Entered integer ");
-    WriteInt(num);
-    SCI_WRITE(&sci0, ": sum = ");
-    WriteInt(s);
-    SCI_WRITE(&sci0, ", median = ");
-    WriteInt(m);
-    SCI_WRITE(&sci0, "\n");
+    /* SKRIV UT */
+//    int s = Sum(self);    // Hämta summan
+//    int m = Median(self); // Hämta medianen
+//
+//    SCI_WRITE(&sci0, "Entered integer ");
+//    WriteInt(num);
+//    SCI_WRITE(&sci0, ": sum = ");
+//    WriteInt(s);
+//    SCI_WRITE(&sci0, ", median = ");
+//    WriteInt(m);
+//    SCI_WRITE(&sci0, "\n");
   }
 }
 
 void startApp(App *self, int arg) {
   CANMsg msg;
+
+  int tmp_indice[] = {0, 2, 4, 0, 0, 2, 4, 0, 4, 5, 7, 4, 5, 7, 7, 9, 7, 5, 4, 0, 7, 9, 7, 5, 4, 0, 0, -5, 0, 0, -5, 0};
+  memcpy(self->indices, tmp_indice, sizeof(tmp_indice));
+  int tmp_periods[] = {
+                          2025,
+                          1911,
+                          1803,
+                          1702,
+                          1607,
+                          1516,
+                          1431,
+                          1351,
+                          1275,
+                          1203,
+                          1136,
+                          1072,
+                          1012,
+                          955,
+                          901,
+                          851,
+                          803,
+                          758,
+                          715,
+                          675,
+                          637,
+                          601,
+                          568,
+                          536,
+                          506
+                          };
+  memcpy(self->periods, tmp_periods, sizeof(tmp_periods));
 
   CAN_INIT(&can0);
   SCI_INIT(&sci0);
