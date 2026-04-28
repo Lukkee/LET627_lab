@@ -36,7 +36,7 @@ void reader(App *self, int c) {
 
   // Input hantering
   if (c == 'm') {
-    ASYNC(self, toggleMute, 0);
+    ASYNC(self, toggleMute, 0); // ASYNC startar paralell process
   }
   else if (c == '+') {
     ASYNC(self, volumeUp, 0);
@@ -86,6 +86,7 @@ void toneGenerator(App *self) {
   SEND(USEC(500), 0, self, toneGenerator, 0);
   // SEND ger både baseline och deadline argument till ASYNC
   // USEC(500) tillser att 500us konverteras korrekt till processorns "tidsenheter"
+  // f = 1 / 2p = 1 / 2*500 = 1kHz
 }
 
 void startApp(App *self, int arg) {

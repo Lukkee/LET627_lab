@@ -98,7 +98,7 @@ void toneGenerator(App *self) {
 void backgroundLoad(BackgroundTask *self) {
   for (int i = 0; i < self->background_loop_range; i++) {}
 
-  SEND(USEC(1300), 0, self, backgroundLoad, 0)
+  SEND(USEC(1300), 0, self, backgroundLoad, 0);
 }
 
 void increaseLoad(BackgroundTask *self) {
@@ -111,7 +111,7 @@ void increaseLoad(BackgroundTask *self) {
 }
 
 void decreaseLoad(BackgroundTask *self) {
-  if (self->background_loop_range > 500) -= 500;
+  if (self->background_loop_range > 500) self->background_loop_range -= 500;
 
   // Print
   char buff[32];
