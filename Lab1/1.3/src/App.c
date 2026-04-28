@@ -48,11 +48,13 @@ void reader(App *self, int c) {
 
                   SCI_WRITE(&sci0, "Frequency: 537 Hz\n");    break; // FREQ 3
         case 'j':
-                  SCI_WRITE(&sci0, self->deadline
-                      ? "Deadline deactivating\n"
-                      : "Deadline activating\n");
+                  if (self->deadline) {
+                    SCI_WRITE(&sci0, "Deadline activating\n");
+                  } else {
+                    SCI_WRITE(&sci0, "Deadline deactivating\n");
+                  }
                   ASYNC(self,      toggleDeadline, 0);
-                  ASYNC(&backtask, toggleDeadline, 0);        break; // TOGGLE DIST
+                  ASYNC(&backtask, toggleDeadlineBG, 0);        break; // TOGGLE DIST
         default:
             break;
     }
@@ -63,10 +65,18 @@ void toggleDeadline(App *self, int arg) {
   self->deadline = !self->deadline;
 }
 
+void toggleDeadlineBG(BackgroundTask *self, int arg) {
+  self->deadline = !self->deadline;
+}
+
 /* == VOLYM KONTROLL == */
 void toggleMute(App *self, int arg) {
   self->muted = !self->muted;
-  SCI_WRITE(&sci0, self->muted ? "Muted\n" : "Unmuted\n");
+  if (self->muted) {
+    SCI_WRITE(&sci0, "Muted\n");
+  } else {
+    SCI_WRITE(&sci0, "Unmuted\n");
+  }
 }
 
 void volumeUp(App *self, int arg) {

@@ -43,6 +43,7 @@ void toggleMute(App *, int);
 
 void setFrequency(App *self, int freq);
 void toggleDeadline(App *self, int);
+void toggleDeadlineBG(BackgroundTask *self, int);
 
 void backgroundLoad(BackgroundTask *, int);
 void increaseLoad(BackgroundTask *, int);
