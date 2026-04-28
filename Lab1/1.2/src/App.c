@@ -2,6 +2,7 @@
 #include "TinyTimber.h"
 #include "canTinyTimber.h"
 #include "sciTinyTimber.h"
+#include <stdio.h>
 
 extern App app;
 extern Can can0;
@@ -51,6 +52,18 @@ void reader(App *self, int c) {
   else if (c == 'd') {
     ASYNC(&backtask, decreaseLoad, 0);
   }
+  else if (c == '1') {
+    setFrequency(self, 1000);
+    SCI_WRITE(&sci0, "Frequency: 1kHz\n");
+  }
+  else if (c == '2') {
+    setFrequency(self, 769);
+    SCI_WRITE(&sci0, "Frequency: 769Hz\n");
+  }
+  else if (c == '3') {
+    setFrequency(self, 537);
+    SCI_WRITE(&sci0, "Frequency: 537Hz\n");
+  }
   else {
     return;
   }
@@ -62,7 +75,11 @@ void setFrequency(App *self, int freq){
 
 void toggleMute(App *self, int arg) {
   self->muted = !self->muted;
-  SCI_WRITE(&sci0, self->muted == 0 ? "Unmuted\n" : "Muted\n");
+  if (self->muted == 0) {
+    SCI_WRITE(&sci0, "Unmuted\n");
+  } else {
+    SCI_WRITE(&sci0, "Muted\n");
+  }
 }
 
 void volumeUp(App *self, int arg) {
@@ -94,7 +111,7 @@ void toneGenerator(App *self, int arg) {
     togglestate = 0;
   }
 
-  SEND(USEC(500), 0, self, toneGenerator, 0);
+  SEND(USEC(self->period_us), 0, self, toneGenerator, 0);
   // SEND ger både baseline och deadline argument till ASYNC
   // USEC(500) tillser att 500us konverteras korrekt till processorns "tidsenheter"
 }
@@ -141,8 +158,11 @@ void startApp(App *self, int arg) {
   msg.buff[5] = 0;
   CAN_SEND(&can0, &msg);
 
-  ASYNC(&backtask, backgroundLoad, 0);
   self->volume = 3;
+  self->period_us = 500;
+
+  ASYNC(self, toneGenerator, 0);
+  ASYNC(&backtask, backgroundLoad, 0);
 }
 
 int main() {
