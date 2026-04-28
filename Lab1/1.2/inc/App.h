@@ -19,13 +19,13 @@ typedef struct {
 typedef struct {
   Object super;
   int background_loop_range;
-} BackgroundTask
+} BackgroundTask;
 
 // Initierar värden till objekt
-#define initApp()                                                              \
+#define initApp() \
   { initObject(), 0 }
 
-#define initBackgroundTask()
+#define initBackgroundTask() \
   { initObject(), 1000 }
 
 // Bas

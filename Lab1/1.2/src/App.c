@@ -46,10 +46,10 @@ void reader(App *self, int c) {
     ASYNC(self, volumeDown, 0);
   }
   else if (c == 'u') {
-    ASYNC(self, increaseLoad, 0);
+    ASYNC(&backtask, increaseLoad, 0);
   }
   else if (c == 'd') {
-    ASYNC(self, decreaseLoad, 0);
+    ASYNC(&backtask, decreaseLoad, 0);
   }
   else {
     return;
@@ -141,7 +141,7 @@ void startApp(App *self, int arg) {
   msg.buff[5] = 0;
   CAN_SEND(&can0, &msg);
 
-  ASYNC(&backgroundTask, backgroundLoad, 0);
+  ASYNC(&backtask, backgroundLoad, 0);
   self->volume = 3;
 }
 
