@@ -60,12 +60,12 @@ void setFrequency(App *self, int freq){
   self->period_us = (1000000 / (2 * (freq)));
 }
 
-void toggleMute(App *self) {
+void toggleMute(App *self, int arg) {
   self->muted = !self->muted;
   SCI_WRITE(&sci0, self->muted == 0 ? "Unmuted\n" : "Muted\n");
 }
 
-void volumeUp(App *self) {
+void volumeUp(App *self, int arg) {
   if (self->volume < 20) {
     self->volume++;
   }
@@ -75,7 +75,7 @@ void volumeUp(App *self) {
   SCI_WRITE(&sci0, buff);
 }
 
-void volumeDown(App *self) {
+void volumeDown(App *self, int arg) {
   if (self->volume > 0) {
     self->volume--;
   }
@@ -85,7 +85,7 @@ void volumeDown(App *self) {
   SCI_WRITE(&sci0, buff);
 }
 
-void toneGenerator(App *self) {
+void toneGenerator(App *self, int arg) {
   if (!togglestate) {
     *DAC_DATA = 0;
     togglestate = 1;
@@ -99,13 +99,13 @@ void toneGenerator(App *self) {
   // USEC(500) tillser att 500us konverteras korrekt till processorns "tidsenheter"
 }
 
-void backgroundLoad(BackgroundTask *self) {
+void backgroundLoad(BackgroundTask *self, int arg) {
   for (int i = 0; i < self->background_loop_range; i++) {}
 
   SEND(USEC(1300), 0, self, backgroundLoad, 0);
 }
 
-void increaseLoad(BackgroundTask *self) {
+void increaseLoad(BackgroundTask *self, int arg) {
   self->background_loop_range += 500;
 
   // Print
@@ -114,7 +114,7 @@ void increaseLoad(BackgroundTask *self) {
   SCI_WRITE(&sci0, buff);
 }
 
-void decreaseLoad(BackgroundTask *self) {
+void decreaseLoad(BackgroundTask *self, int arg) {
   if (self->background_loop_range > 500) self->background_loop_range -= 500;
 
   // Print
