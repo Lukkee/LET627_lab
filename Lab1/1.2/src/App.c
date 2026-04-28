@@ -56,6 +56,10 @@ void reader(App *self, int c) {
   }
 }
 
+void setFrequency(App *self, int freq){
+  self->period_us = (1000000 / (2 * (freq)));
+}
+
 void toggleMute(App *self) {
   self->muted = !self->muted;
   SCI_WRITE(&sci0, self->muted == 0 ? "Unmuted\n" : "Muted\n");
@@ -137,7 +141,7 @@ void startApp(App *self, int arg) {
   msg.buff[5] = 0;
   CAN_SEND(&can0, &msg);
 
-  ASYNC(&backgroundTask, backgroundLoad, 0)
+  ASYNC(&backgroundTask, backgroundLoad, 0);
 }
 
 int main() {

@@ -13,6 +13,7 @@ typedef struct {
   int cnt;
   int volume;
   int muted;
+  int period_us;
 } App;
 
 typedef struct {
@@ -37,6 +38,8 @@ void toneGenerator(App *, int);
 void volumeUp(App *, int);
 void volumeDown(App *, int);
 void toggleMute(App *, int);
+
+void setFrequency(App *self, int freq);
 
 void backgroundLoad(BackgroundTask *, int);
 void increaseLoad(BackgroundTask *, int);
