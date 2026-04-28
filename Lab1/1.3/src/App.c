@@ -4,25 +4,16 @@
 #include "sciTinyTimber.h"
 #include <stdio.h>
 
+/* == GLOBALA OBJEKT == */
 extern App app;
 extern Can can0;
 extern Serial sci0;
 extern BackgroundTask backtask;
 
-/* FRÅN APP_H
-  typedef struct {
-    Object super;
-    int history[3];
-    int history_index;
-    char buffer[12];
-    int cnt;
-    int volume;
-    int muted;
-  } App;
-*/
-
+/* == STATISKA VARIABLER == */
 static int togglestate = 0;
 
+/* == I/O FUNKTIONER == */
 void receiver(App *self, int unused) {
   CANMsg msg;
   CAN_RECEIVE(&can0, &msg);
@@ -37,82 +28,66 @@ void reader(App *self, int c) {
     SCI_WRITE(&sci0, "\'\n");
 
   // Input hantering
-  if (c == 'm') {
-    ASYNC(self, toggleMute, 0);
-  }
-  else if (c == '+') {
-    ASYNC(self, volumeUp, 0);
-  }
-  else if (c == '-') {
-    ASYNC(self, volumeDown, 0);
-  }
-  else if (c == 'u') {
-    ASYNC(&backtask, increaseLoad, 0);
-  }
-  else if (c == 'd') {
-    ASYNC(&backtask, decreaseLoad, 0);
-  }
-  else if (c == '1') {
-    setFrequency(self, 1000);
-    SCI_WRITE(&sci0, "Frequency: 1kHz\n");
-  }
-  else if (c == '2') {
-    setFrequency(self, 769);
-    SCI_WRITE(&sci0, "Frequency: 769Hz\n");
-  }
-  else if (c == '3') {
-    setFrequency(self, 537);
-    SCI_WRITE(&sci0, "Frequency: 537Hz\n");
-  }
-  else if (c == 'j') {
-    ASYNC(self, toggleDeadline, 0);
-    ASYNC(&backtask, toggleDeadline, 0);
-    if (self->deadline == 1) {
-      SCI_WRITE(&sci0, "Deadline Deactivated\n");
-    } else {
-      SCI_WRITE(&sci0, "Deadline Activated\n");
+    switch (c) {
+        case 'm': ASYNC(self, toggleMute, 0);                 break; // MUTE
+
+        case '+': ASYNC(self, volumeUp,   0);                 break; // ÖKA VOLYM
+
+        case '-': ASYNC(self, volumeDown, 0);                 break; // SÄNK VOLYM
+
+        case 'u': ASYNC(&backtask, increaseLoad, 0);          break; // ÖKA DIST
+
+        case 'd': ASYNC(&backtask, decreaseLoad, 0);          break; // SÄNK DIST
+        case '1': setFrequency(self, 1000);
+
+                  SCI_WRITE(&sci0, "Frequency: 1000 Hz\n");   break; // FREQ 1
+        case '2': setFrequency(self, 769);
+
+                  SCI_WRITE(&sci0, "Frequency: 769 Hz\n");    break; // FREQ 2
+        case '3': setFrequency(self, 537);
+
+                  SCI_WRITE(&sci0, "Frequency: 537 Hz\n");    break; // FREQ 3
+        case 'j':
+                  SCI_WRITE(&sci0, self->deadline
+                      ? "Deadline deactivating\n"
+                      : "Deadline activating\n");
+                  ASYNC(self,      toggleDeadline, 0);
+                  ASYNC(&backtask, toggleDeadline, 0);        break; // TOGGLE DIST
+        default:
+            break;
     }
-  }
-  else {
-    return;
-  }
 }
 
+/* == DEADLINE KONTROLL == */
 void toggleDeadline(App *self, int arg) {
-  self->deadline = self->deadline == 0 ? 1 : 0;
+  self->deadline = !self->deadline;
 }
 
-void setFrequency(App *self, int freq){
-  self->period_us = (1000000 / (2 * (freq)));
-}
-
+/* == VOLYM KONTROLL == */
 void toggleMute(App *self, int arg) {
   self->muted = !self->muted;
-  if (self->muted == 0) {
-    SCI_WRITE(&sci0, "Unmuted\n");
-  } else {
-    SCI_WRITE(&sci0, "Muted\n");
-  }
+  SCI_WRITE(&sci0, self->muted ? "Muted\n" : "Unmuted\n");
 }
 
 void volumeUp(App *self, int arg) {
-  if (self->volume < 20) {
-    self->volume++;
-  }
-  // Print
+  if (self->volume < 20) self->volume++;
+
   char buff[32];
   snprintf(buff, sizeof(buff), "Volume: %d\n", self->volume);
   SCI_WRITE(&sci0, buff);
 }
 
 void volumeDown(App *self, int arg) {
-  if (self->volume > 0) {
-    self->volume--;
-  }
-  // Print
+  if (self->volume > 0) self->volume--;
+
   char buff[32];
   snprintf(buff, sizeof(buff), "Volume: %d\n", self->volume);
   SCI_WRITE(&sci0, buff);
+}
+
+/* == TON KONTROLL == */
+void setFrequency(App *self, int freq){
+  self->period_us = (1000000 / (2 * (freq)));
 }
 
 void toneGenerator(App *self, int arg) {
@@ -129,6 +104,7 @@ void toneGenerator(App *self, int arg) {
   // USEC(500) tillser att 500us konverteras korrekt till processorns "tidsenheter"
 }
 
+/* == DISTORTION == */
 void backgroundLoad(BackgroundTask *self, int arg) {
   for (int i = 0; i < self->background_loop_range; i++) {}
 
@@ -138,7 +114,6 @@ void backgroundLoad(BackgroundTask *self, int arg) {
 void increaseLoad(BackgroundTask *self, int arg) {
   self->background_loop_range += 500;
 
-  // Print
   char buff[32];
   snprintf(buff, sizeof(buff), "load: %d\n", self->background_loop_range);
   SCI_WRITE(&sci0, buff);
@@ -147,12 +122,12 @@ void increaseLoad(BackgroundTask *self, int arg) {
 void decreaseLoad(BackgroundTask *self, int arg) {
   if (self->background_loop_range > 500) self->background_loop_range -= 500;
 
-  // Print
   char buff[32];
   snprintf(buff, sizeof(buff), "load: %d\n", self->background_loop_range);
   SCI_WRITE(&sci0, buff);
 }
 
+/* == PROGRAM KONTROLL == */
 void startApp(App *self, int arg) {
   CANMsg msg;
 
