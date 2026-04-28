@@ -142,6 +142,7 @@ void startApp(App *self, int arg) {
   CAN_SEND(&can0, &msg);
 
   ASYNC(&backgroundTask, backgroundLoad, 0);
+  self->volume = 3;
 }
 
 int main() {
