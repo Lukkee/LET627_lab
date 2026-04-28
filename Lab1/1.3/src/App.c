@@ -64,9 +64,22 @@ void reader(App *self, int c) {
     setFrequency(self, 537);
     SCI_WRITE(&sci0, "Frequency: 537Hz\n");
   }
+  else if (c == 'j') {
+    ASYNC(self, toggleDeadline, 0);
+    ASYNC(&backtask, toggleDeadline, 0);
+    if (self->deadline == 1) {
+      SCI_WRITE(&sci0, "Deadline Deactivated\n");
+    } else {
+      SCI_WRITE(&sci0, "Deadline Activated\n");
+    }
+  }
   else {
     return;
   }
+}
+
+void toggleDeadline(App *self, int arg) {
+  self->deadline = self->deadline == 0 ? 1 : 0;
 }
 
 void setFrequency(App *self, int freq){
@@ -111,7 +124,7 @@ void toneGenerator(App *self, int arg) {
     togglestate = 0;
   }
 
-  SEND(USEC(self->period_us), 0, self, toneGenerator, 0);
+  SEND(USEC(self->period_us), self->deadline == 1 ? USEC(100) : 0, self, toneGenerator, 0);
   // SEND ger både baseline och deadline argument till ASYNC
   // USEC(500) tillser att 500us konverteras korrekt till processorns "tidsenheter"
 }
@@ -119,7 +132,7 @@ void toneGenerator(App *self, int arg) {
 void backgroundLoad(BackgroundTask *self, int arg) {
   for (int i = 0; i < self->background_loop_range; i++) {}
 
-  SEND(USEC(1300), 0, self, backgroundLoad, 0);
+  SEND(USEC(1300), self->deadline == 1 ? USEC(1300) : 0, self, backgroundLoad, 0);  // Deadline = arg 2
 }
 
 void increaseLoad(BackgroundTask *self, int arg) {

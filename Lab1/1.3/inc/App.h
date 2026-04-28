@@ -14,11 +14,13 @@ typedef struct {
   int volume;
   int muted;
   int period_us;
+  int deadline;
 } App;
 
 typedef struct {
   Object super;
   int background_loop_range;
+  int deadline;
 } BackgroundTask;
 
 // Initierar värden till objekt
@@ -40,6 +42,7 @@ void volumeDown(App *, int);
 void toggleMute(App *, int);
 
 void setFrequency(App *self, int freq);
+void toggleDeadline(App *self, int);
 
 void backgroundLoad(BackgroundTask *, int);
 void increaseLoad(BackgroundTask *, int);
