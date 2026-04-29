@@ -15,23 +15,32 @@ One symbol at a time will be processed by the processor over serial,
 digits will compose into 32-bit integers.
 
 ***e***       - Ends current integer
+
 ***F***       - Clears the 3-history
+
 ***123...***  - Digits and signs will composed into an integer
+
 ***abc...***  - Letters will be discarded
 
 # Step 3: Deadlines to the rescue
 ## Controls
 ### Volume
 ***m*** - mute / unmute
+
 ***+*** - volume up (max 20)
+
 ***-*** - volume down (min 0)
 
 ### Background Load and Deadline
 ***j*** - toggle deadlines
+
 ***u*** - increase background load
+
 ***d*** - decrease background load
 
 ### Frequencies
 ***1*** - 1 kHz
+
 ***2*** - 769 Hz
+
 ***3*** - 537 Hz
