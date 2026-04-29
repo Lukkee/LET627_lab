@@ -48,7 +48,7 @@ void reader(App *self, int c) {
 
                   SCI_WRITE(&sci0, "Frequency: 537 Hz\n");    break; // FREQ 3
         case 'j':
-                  if (self->deadline) {
+                  if (!self->deadline) {
                     SCI_WRITE(&sci0, "Deadline activating\n");
                   } else {
                     SCI_WRITE(&sci0, "Deadline deactivating\n");
@@ -130,7 +130,7 @@ void increaseLoad(BackgroundTask *self, int arg) {
 }
 
 void decreaseLoad(BackgroundTask *self, int arg) {
-  if (self->background_loop_range > 500) self->background_loop_range -= 500;
+  if (self->background_loop_range >= 500) self->background_loop_range -= 500;
 
   char buff[32];
   snprintf(buff, sizeof(buff), "load: %d\n", self->background_loop_range);
@@ -156,8 +156,10 @@ void startApp(App *self, int arg) {
   msg.buff[5] = 0;
   CAN_SEND(&can0, &msg);
 
-  self->volume = 3;
+  /* INITIERA VÄRDEN */
+  self->volume = 1;
   self->period_us = 500;
+  self->deadline = 1;
 
   ASYNC(self, toneGenerator, 0);
   ASYNC(&backtask, backgroundLoad, 0);
