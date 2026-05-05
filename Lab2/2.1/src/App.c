@@ -39,9 +39,9 @@ void reader(App *self, int c) {
 
   // Input hantering
     switch (c) {
-        case MUTE:        ASYNC(&mp, toggleMute,      0);          break; // MUTE
-        case VOL_UP:      ASYNC(&mp, increaseVolume,  0);          break; // ÖKA  VOLYM
-        case VOL_DOWN:    ASYNC(&mp, decreaseVolume,  0);          break; // SÄNK VOLYM
+        case MUTE:        ASYNC(&tg, toggleMute,      0);          break; // MUTE
+        case VOL_UP:      ASYNC(&tg, increaseVolume,  0);          break; // ÖKA  VOLYM
+        case VOL_DOWN:    ASYNC(&tg, decreaseVolume,  0);          break; // SÄNK VOLYM
         case KEY_UP:      ASYNC(&mp, increaseKey,     0);          break; // ÖKA  KEY
         case KEY_DOWN:    ASYNC(&mp, decreaseKey,     0);          break; // SÄNK KEY
         case TEMPO_UP:    ASYNC(&mp, increaseTempo,   0);          break; // ÖKA  TEMPO
@@ -51,11 +51,11 @@ void reader(App *self, int c) {
     }
 }
 
-void toggleMute(MusicPlayer *self, int arg) {
+void toggleMute(ToneGenerator *self, int arg) {
   self->muted = !self->muted;
 }
 
-void increaseVolume(MusicPlayer *self, int arg) {
+void increaseVolume(ToneGenerator *self, int arg) {
   if (self->volume < VOL_MAX) self->volume++;
 
   char buffer[32];
@@ -63,7 +63,7 @@ void increaseVolume(MusicPlayer *self, int arg) {
   SCI_WRITE(&sci0, buffer);
 }
 
-void decreaseVolume(MusicPlayer *self, int arg) {
+void decreaseVolume(ToneGenerator *self, int arg) {
   if (self->volume > VOL_MIN) self->volume--;
 
   char buffer[32];

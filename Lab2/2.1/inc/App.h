@@ -34,9 +34,9 @@ void reader(App *, int);
 void receiver(App *, int);
 void startApp(App *, int);
 
-void toggleMute(MusicPlayer *, int);
-void increaseVolume(MusicPlayer *, int);
-void decreaseVolume(MusicPlayer *, int);
+void toggleMute(ToneGenerator *, int);
+void increaseVolume(ToneGenerator *, int);
+void decreaseVolume(ToneGenerator *, int);
 void increaseKey(MusicPlayer *, int);
 void decreaseKey(MusicPlayer *, int);
 void increaseTempo(MusicPlayer *, int);
