@@ -15,8 +15,10 @@
 #define VOL_MIN      0
 #define KEY_MAX      5
 #define KEY_MIN     -5
-#define TEMPO_MAX  340
-#define TEMPO_MIN   30
+#define TEMPO_MAX  240
+#define TEMPO_MIN   60
+
+#define DAC_DATA ((volatile uint8_t *)0x4000741C)
 
 typedef struct {
   Object super;
@@ -27,23 +29,25 @@ typedef struct {
   Object super;
   int key;
   int tempo;
+  int index;
 } MusicPlayer;
 
 typedef struct {
   Object super;
-  int frequency;
   int volume;
   int muted;
+  int usr_mute;
+  int period_us;
 } ToneGenerator;
 
 #define initApp()                                                              \
   { initObject(), 1234 }
 
   #define initMusicPlayer()                                                              \
-  { initObject(), 0, 120 }
+  { initObject(), 0, 120, 0 }
 
 #define initToneGenerator()                                                              \
-  { initObject(), 1234, 3, 0 }
+  { initObject(), 3, 0, 0, 500}
 
 void reader(App *, int);
 void receiver(App *, int);
@@ -58,5 +62,8 @@ void increaseTempo(MusicPlayer *, int);
 void decreaseTempo(MusicPlayer *, int);
 
 void toneGenerator(ToneGenerator *, int);
+void silence(ToneGenerator *, int);
+void playNote(MusicPlayer *, int);
+void setNote(ToneGenerator *, int);
 
 #endif

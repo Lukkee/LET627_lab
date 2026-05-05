@@ -10,6 +10,12 @@ extern ToneGenerator tg;
 extern Can can0;
 extern Serial sci0;
 
+static int frequencies[]  = {0,2,4,0,0,2,4,0,4,5,7,4,5,7,7,9,
+                             7,5,4,0,7,9,7,5,4,0,0,-5,0,0,-5,0};
+
+static int lengths[]      = {2,2,2,2,2,2,2,2,2,2,4,2,2,4,1,1,
+                             1,1,2,2,1,1,1,1,2,2,2,2,4,2,2,4};
+
 void receiver(App *self, int unused) {
   CANMsg msg;
   CAN_RECEIVE(&can0, &msg);
@@ -38,7 +44,7 @@ void reader(App *self, int c) {
 }
 
 void toggleMute(ToneGenerator *self, int arg) {
-  self->muted = !self->muted;
+  self->usr_mute = !self->usr_mute;
 }
 
 void increaseVolume(ToneGenerator *self, int arg) {
@@ -89,7 +95,53 @@ void decreaseTempo(MusicPlayer *self, int arg) {
   SCI_WRITE(&sci0, buffer);
 }
 
-void toneGenerator(ToneGenerator *self, int arg) {}
+int getFrequencies(int index) {
+  static int periods[] = {2025, 1911, 1803, 1702, 1607, 1516, 1431, 1351,
+                          1275, 1203, 1136, 1072, 1012, 955, 901, 851,
+                          803, 758, 715, 675, 637, 601, 568, 536, 506};
+
+  return periods[index + 10];
+}
+
+void silence(ToneGenerator *self, int arg) {
+  self->muted = 1;
+}
+
+void toneGenerator(ToneGenerator *self, int arg) {
+    static int toggle = 0;
+    if (!self->muted && !self->usr_mute) {
+        *DAC_DATA = toggle ? self->volume : 0;
+        toggle = !toggle;
+    } else {
+        *DAC_DATA = 0;
+    }
+    SEND(USEC(self->period_us), 0, self, toneGenerator, 0);
+}
+
+void setNote(ToneGenerator *self, int arg) {
+    self->period_us = arg;
+    self->muted = 0;
+}
+
+void playNote(MusicPlayer *self, int arg) {
+    int i = self->index;
+
+    // beat = 60000ms / tempo
+    Time beat      = MSEC(60000 / self->tempo);
+    Time note_time = beat * lengths[i] / 2;  // /2 because stored as *2
+    Time play_time = note_time - (note_time / 16);
+
+    // Set frequency on ToneGenerator
+    int freq_index = frequencies[i] + self->key;
+    SYNC(&tg, setNote, getFrequencies(freq_index));
+
+    // Schedule silence after play_time
+    SEND(play_time, 0, &tg, silence, 0);
+
+    // Schedule next note
+    self->index = (self->index + 1) % 32;
+    SEND(note_time, 0, self, playNote, 0);
+}
 
 void startApp(App *self, int arg) {
   CANMsg msg;
@@ -108,6 +160,9 @@ void startApp(App *self, int arg) {
   msg.buff[4] = 'o';
   msg.buff[5] = 0;
   CAN_SEND(&can0, &msg);
+
+  ASYNC(&tg, toneGenerator, 0);
+  ASYNC(&mp, playNote, 0);
 }
 
 int main() {
