@@ -17,6 +17,13 @@ extern Serial sci0;
 #define TEMPO_UP    'e'
 #define TEMPO_DOWN  'q'
 
+#define VOL_MAX     20
+#define VOL_MIN      0
+#define KEY_MAX      5
+#define KEY_MIN     -5
+#define TEMPO_MAX  340
+#define TEMPO_MIN   30
+
 void receiver(App *self, int unused) {
   CANMsg msg;
   CAN_RECEIVE(&can0, &msg);
@@ -32,31 +39,69 @@ void reader(App *self, int c) {
 
   // Input hantering
     switch (c) {
-        case MUTE:        ASYNC(&mp, toggleMute,    0);          break; // MUTE
-        case VOL_UP:      ASYNC(&mp, increaseVolume 0);          break; // ÖKA  VOLYM
-        case VOL_DOWN:    ASYNC(&mp, decreaseVolume 0);          break; // SÄNK VOLYM
-        case KEY_UP:      ASYNC(&mp, increaseKey,   0);          break; // ÖKA  KEY
-        case KEY_DOWN:    ASYNC(&mp, decreaseKey,   0);          break; // SÄNK KEY
-        case TEMPO_UP:    ASYNC(&mp, increaseTempo, 0);          break; // ÖKA  TEMPO
-        case TEMPO_DOWN:  ASYNC(&mp, decreaseTempo, 0);          break; // SÄNK TEMPO
+        case MUTE:        ASYNC(&mp, toggleMute,      0);          break; // MUTE
+        case VOL_UP:      ASYNC(&mp, increaseVolume,  0);          break; // ÖKA  VOLYM
+        case VOL_DOWN:    ASYNC(&mp, decreaseVolume,  0);          break; // SÄNK VOLYM
+        case KEY_UP:      ASYNC(&mp, increaseKey,     0);          break; // ÖKA  KEY
+        case KEY_DOWN:    ASYNC(&mp, decreaseKey,     0);          break; // SÄNK KEY
+        case TEMPO_UP:    ASYNC(&mp, increaseTempo,   0);          break; // ÖKA  TEMPO
+        case TEMPO_DOWN:  ASYNC(&mp, decreaseTempo,   0);          break; // SÄNK TEMPO
 
         default: break;
     }
 }
 
-void toggleMute(MusicPlayer *self, int arg) {}
+void toggleMute(MusicPlayer *self, int arg) {
+  self->muted = !self->muted;
+}
 
-void increaseVolume(MusicPlayer *self, int arg) {}
+void increaseVolume(MusicPlayer *self, int arg) {
+  if (self->volume < VOL_MAX) self->volume++;
 
-void decreaseVolume(MusicPlayer *self, int arg) {}
+  char buffer[32];
+  snprintf(buffer, sizeof(buffer), "Vol: %d\n", self->volume);
+  SCI_WRITE(&sci0, buffer);
+}
 
-void increaseKey(MusicPlayer *self, int arg) {}
+void decreaseVolume(MusicPlayer *self, int arg) {
+  if (self->volume > VOL_MIN) self->volume--;
 
-void decreaseKey(MusicPlayer *self, int arg) {}
+  char buffer[32];
+  snprintf(buffer, sizeof(buffer), "Vol: %d\n", self->volume);
+  SCI_WRITE(&sci0, buffer);
+}
 
-void increaseTempo(MusicPlayer *self, int arg) {}
+void increaseKey(MusicPlayer *self, int arg) {
+  if (self->key < KEY_MAX) self->key++;
 
-void decreaseTempo(MusicPlayer *self, int arg) {}
+  char buffer[32];
+  snprintf(buffer, sizeof(buffer), "Key: %d\n", self->key);
+  SCI_WRITE(&sci0, buffer);
+}
+
+void decreaseKey(MusicPlayer *self, int arg) {
+  if (self->key > KEY_MIN) self->key--;
+
+  char buffer[32];
+  snprintf(buffer, sizeof(buffer), "Key: %d\n", self->key);
+  SCI_WRITE(&sci0, buffer);
+}
+
+void increaseTempo(MusicPlayer *self, int arg) {
+  if (self->tempo < TEMPO_MAX) self->tempo++;
+
+  char buffer[32];
+  snprintf(buffer, sizeof(buffer), "Tempo: %d\n", self->tempo);
+  SCI_WRITE(&sci0, buffer);
+}
+
+void decreaseTempo(MusicPlayer *self, int arg) {
+  if (self->tempo > TEMPO_MIN) self->tempo--;
+
+  char buffer[32];
+  snprintf(buffer, sizeof(buffer), "Tempo: %d\n", self->tempo);
+  SCI_WRITE(&sci0, buffer);
+}
 
 void toneGenerator(ToneGenerator *self, int arg) {}
 
