@@ -3,6 +3,21 @@
 
 #include "TinyTimber.h"
 
+#define MUTE        'm'
+#define VOL_UP      '+'
+#define VOL_DOWN    '-'
+#define KEY_UP      'u'
+#define KEY_DOWN    'd'
+#define TEMPO_UP    'e'
+#define TEMPO_DOWN  'q'
+
+#define VOL_MAX     20
+#define VOL_MIN      0
+#define KEY_MAX      5
+#define KEY_MIN     -5
+#define TEMPO_MAX  340
+#define TEMPO_MIN   30
+
 typedef struct {
   Object super;
   int example;

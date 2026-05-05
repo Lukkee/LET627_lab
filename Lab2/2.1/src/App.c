@@ -2,27 +2,13 @@
 #include "TinyTimber.h"
 #include "canTinyTimber.h"
 #include "sciTinyTimber.h"
+#include <stdio.h>
 
 extern App app;
 extern MusicPlayer mp;
 extern ToneGenerator tg;
 extern Can can0;
 extern Serial sci0;
-
-#define MUTE        'm'
-#define VOL_UP      '+'
-#define VOL_DOWN    '-'
-#define KEY_UP      'u'
-#define KEY_DOWN    'd'
-#define TEMPO_UP    'e'
-#define TEMPO_DOWN  'q'
-
-#define VOL_MAX     20
-#define VOL_MIN      0
-#define KEY_MAX      5
-#define KEY_MIN     -5
-#define TEMPO_MAX  340
-#define TEMPO_MIN   30
 
 void receiver(App *self, int unused) {
   CANMsg msg;
