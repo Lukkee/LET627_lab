@@ -28,7 +28,7 @@ typedef struct {
   { initObject(), 0 }
 
 #define initBackgroundTask() \
-  { initObject(), 1000 }
+  { initObject(), 13500 }
 
 // Bas
 void reader(App *, int);
