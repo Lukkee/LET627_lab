@@ -562,9 +562,9 @@ void decreaseTempo(MusicPlayer *self, int arg) {
 20000428:	20001b8b 	.word	0x20001b8b
 2000042c:	20009218 	.word	0x20009218
 
-20000430 <getFrequencies>:
+20000430 <getPeriods>:
 
-int getFrequencies(int index) {
+int getPeriods(int index) {
 20000430:	b480      	push	{r7}
 20000432:	b083      	sub	sp, #12
 20000434:	af00      	add	r7, sp, #0
@@ -576,7 +576,7 @@ int getFrequencies(int index) {
   return periods[index + 10];
 20000438:	687b      	ldr	r3, [r7, #4]
 2000043a:	330a      	adds	r3, #10
-2000043c:	4a04      	ldr	r2, [pc, #16]	@ (20000450 <getFrequencies+0x20>)
+2000043c:	4a04      	ldr	r2, [pc, #16]	@ (20000450 <getPeriods+0x20>)
 2000043e:	f852 3023 	ldr.w	r3, [r2, r3, lsl #2]
 }
 20000442:	4618      	mov	r0, r3
@@ -755,9 +755,9 @@ void playNote(MusicPlayer *self, int arg) {
 2000056e:	689b      	ldr	r3, [r3, #8]
 20000570:	4413      	add	r3, r2
 20000572:	60fb      	str	r3, [r7, #12]
-    SYNC(&tg, setNote, getFrequencies(freq_index));
+    SYNC(&tg, setNote, getPeriods(freq_index));
 20000574:	68f8      	ldr	r0, [r7, #12]
-20000576:	f7ff ff5b 	bl	20000430 <getFrequencies>
+20000576:	f7ff ff5b 	bl	20000430 <getPeriods>
 2000057a:	4603      	mov	r3, r0
 2000057c:	461a      	mov	r2, r3
 2000057e:	4916      	ldr	r1, [pc, #88]	@ (200005d8 <playNote+0xc2>)

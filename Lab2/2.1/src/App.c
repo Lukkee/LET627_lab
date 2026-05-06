@@ -102,7 +102,7 @@ void decreaseTempo(MusicPlayer *self, int arg) {
   SCI_WRITE(&sci0, buffer);
 }
 
-int getFrequencies(int index) {
+int getPeriods(int index) {
   static int periods[] = {2025, 1911, 1803, 1702, 1607, 1516, 1431, 1351,
                           1275, 1203, 1136, 1072, 1012, 955, 901, 851,
                           803, 758, 715, 675, 637, 601, 568, 536, 506};
@@ -140,7 +140,7 @@ void playNote(MusicPlayer *self, int arg) {
 
     // Sätt frekvens på toneGenerator
     int freq_index = frequencies[i] + self->key;
-    SYNC(&tg, setNote, getFrequencies(freq_index));
+    SYNC(&tg, setNote, getPeriods(freq_index));
 
     // Schemalägg mellanrum innan nästa not
     SEND(play_time, 0, &tg, silence, 0);
