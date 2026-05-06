@@ -13,6 +13,7 @@ extern Serial sci0;
 static int frequencies[]  = {0,2,4,0,0,2,4,0,4,5,7,4,5,7,7,9,
                              7,5,4,0,7,9,7,5,4,0,0,-5,0,0,-5,0};
 
+// Sparas som *2 för att ej behöva använda float
 static int lengths[]      = {2,2,2,2,2,2,2,2,2,2,4,2,2,4,1,1,
                              1,1,2,2,1,1,1,1,2,2,2,2,4,2,2,4};
 
@@ -31,13 +32,14 @@ void reader(App *self, int c) {
 
   // Input hantering
     switch (c) {
-        case MUTE:        ASYNC(&tg, toggleMute,      0);          break; // MUTE
-        case VOL_UP:      ASYNC(&tg, increaseVolume,  0);          break; // ÖKA  VOLYM
-        case VOL_DOWN:    ASYNC(&tg, decreaseVolume,  0);          break; // SÄNK VOLYM
-        case KEY_UP:      ASYNC(&mp, increaseKey,     0);          break; // ÖKA  KEY
-        case KEY_DOWN:    ASYNC(&mp, decreaseKey,     0);          break; // SÄNK KEY
-        case TEMPO_UP:    ASYNC(&mp, increaseTempo,   0);          break; // ÖKA  TEMPO
-        case TEMPO_DOWN:  ASYNC(&mp, decreaseTempo,   0);          break; // SÄNK TEMPO
+        case MUTE:        ASYNC(&tg, toggleMute,      0);   break; // MUTE
+        case VOL_UP:      ASYNC(&tg, increaseVolume,  0);   break; // ÖKA  VOLYM
+        case VOL_DOWN:    ASYNC(&tg, decreaseVolume,  0);   break; // SÄNK VOLYM
+        case PAUSE:       ASYNC(&mp, pausePlayer,     0);   break; // PAUSE
+        case KEY_UP:      ASYNC(&mp, increaseKey,     0);   break; // ÖKA  KEY
+        case KEY_DOWN:    ASYNC(&mp, decreaseKey,     0);   break; // SÄNK KEY
+        case TEMPO_UP:    ASYNC(&mp, increaseTempo,   0);   break; // ÖKA  TEMPO
+        case TEMPO_DOWN:  ASYNC(&mp, decreaseTempo,   0);   break; // SÄNK TEMPO
 
         default: break;
     }
@@ -61,6 +63,11 @@ void decreaseVolume(ToneGenerator *self, int arg) {
   char buffer[32];
   snprintf(buffer, sizeof(buffer), "Vol: %d\n", self->volume);
   SCI_WRITE(&sci0, buffer);
+}
+
+void pausePlayer(MusicPlayer *self, int arg) {
+  self->pause = !self->pause;
+  if (!self->pause) ASYNC(&mp, playNote, 0);
 }
 
 void increaseKey(MusicPlayer *self, int arg) {
@@ -128,19 +135,19 @@ void playNote(MusicPlayer *self, int arg) {
 
     // beat = 60000ms / tempo
     Time beat      = MSEC(60000 / self->tempo);
-    Time note_time = beat * lengths[i] / 2;  // /2 because stored as *2
+    Time note_time = beat * lengths[i] / 2;  // /2 då de sparas som *2
     Time play_time = note_time - (note_time / 16);
 
-    // Set frequency on ToneGenerator
+    // Sätt frekvens på toneGenerator
     int freq_index = frequencies[i] + self->key;
     SYNC(&tg, setNote, getFrequencies(freq_index));
 
-    // Schedule silence after play_time
+    // Schemalägg mellanrum innan nästa not
     SEND(play_time, 0, &tg, silence, 0);
 
-    // Schedule next note
+    // Schemalägg nästa not
     self->index = (self->index + 1) % 32;
-    SEND(note_time, 0, self, playNote, 0);
+    if (!self->pause) SEND(note_time, 0, self, playNote, 0);
 }
 
 void startApp(App *self, int arg) {

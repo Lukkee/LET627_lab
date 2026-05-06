@@ -10,6 +10,7 @@
 #define KEY_DOWN    'd'
 #define TEMPO_UP    'e'
 #define TEMPO_DOWN  'q'
+#define PAUSE       'p'
 
 #define VOL_MAX     20
 #define VOL_MIN      0
@@ -30,6 +31,7 @@ typedef struct {
   int key;
   int tempo;
   int index;
+  int pause;
 } MusicPlayer;
 
 typedef struct {
@@ -44,7 +46,7 @@ typedef struct {
   { initObject(), 1234 }
 
   #define initMusicPlayer()                                                              \
-  { initObject(), 0, 120, 0 }
+  { initObject(), 0, 120, 0, 0 }
 
 #define initToneGenerator()                                                              \
   { initObject(), 3, 0, 0, 500}
@@ -60,6 +62,7 @@ void increaseKey(MusicPlayer *, int);
 void decreaseKey(MusicPlayer *, int);
 void increaseTempo(MusicPlayer *, int);
 void decreaseTempo(MusicPlayer *, int);
+void pausePlayer(MusicPlayer *, int);
 
 void toneGenerator(ToneGenerator *, int);
 void silence(ToneGenerator *, int);
