@@ -14,3 +14,9 @@
 ***1*** - 1 kHz
 ***2*** - 769 Hz
 ***3*** - 537 Hz
+
+# Åtgärder
+  togglestate nu inuti objektet
+
+  värden initieras i
+```C{ initObject(), 1, 500, 1 }```

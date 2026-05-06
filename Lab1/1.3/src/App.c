@@ -10,9 +10,6 @@ extern Can can0;
 extern Serial sci0;
 extern BackgroundTask backtask;
 
-/* == STATISKA VARIABLER == */
-static int togglestate = 0;
-
 /* == I/O FUNKTIONER == */
 void receiver(App *self, int unused) {
   CANMsg msg;
@@ -101,12 +98,12 @@ void setFrequency(App *self, int freq){
 }
 
 void toneGenerator(App *self, int arg) {
-  if (!togglestate) {
+  if (!self->togglestate) {
     *DAC_DATA = 0;
-    togglestate = 1;
+    self->togglestate = 1;
   } else {
     *DAC_DATA = self->muted ? 0 : self->volume;
-    togglestate = 0;
+    self->togglestate = 0;
   }
 
   SEND(USEC(self->period_us), self->deadline == 1 ? USEC(100) : 0, self, toneGenerator, 0);
