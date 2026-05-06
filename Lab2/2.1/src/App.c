@@ -3,6 +3,8 @@
 #include "canTinyTimber.h"
 #include "sciTinyTimber.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 extern App app;
 extern MusicPlayer mp;
@@ -26,24 +28,67 @@ void receiver(App *self, int unused) {
 
 void reader(App *self, int c) {
 
-    SCI_WRITE(&sci0, "Rcv: \'");
+    SCI_WRITE(&sci0, "Rcv: '");
     SCI_WRITECHAR(&sci0, c);
-    SCI_WRITE(&sci0, "\'\n");
+    SCI_WRITE(&sci0, "'\n");
 
-  // Input hantering
+    /* ---------- INPUT MODE ---------- */
+    if (self->mode != INPUT_DEFAULT) {
+
+        if (c != 'e' && self->cnt < 11) {
+            self->buffer[self->cnt++] = c;
+            return;
+        }
+
+        /* Finish input */
+        self->buffer[self->cnt] = '\0';
+        int value = atoi(self->buffer);
+
+        if (self->mode == INPUT_KEY) {
+            ASYNC(&mp, setKeyVal, value);
+        }
+        else if (self->mode == INPUT_TEMPO) {
+            ASYNC(&mp, setTempoVal, value);
+        }
+
+        self->cnt = 0;
+        self->mode = INPUT_DEFAULT;
+        memset(self->buffer, 0, sizeof(self->buffer));
+
+        return;
+    }
+
+    /* ---------- DEFAULT MODE ---------- */
     switch (c) {
-        case MUTE:        ASYNC(&tg, toggleMute,      0);   break; // MUTE
-        case VOL_UP:      ASYNC(&tg, increaseVolume,  0);   break; // ÖKA  VOLYM
-        case VOL_DOWN:    ASYNC(&tg, decreaseVolume,  0);   break; // SÄNK VOLYM
-        case PAUSE:       ASYNC(&mp, pausePlayer,     0);   break; // PAUSE
-        case KEY_UP:      ASYNC(&mp, increaseKey,     0);   break; // ÖKA  KEY
-        case KEY_DOWN:    ASYNC(&mp, decreaseKey,     0);   break; // SÄNK KEY
-        case TEMPO_UP:    ASYNC(&mp, increaseTempo,   0);   break; // ÖKA  TEMPO
-        case TEMPO_DOWN:  ASYNC(&mp, decreaseTempo,   0);   break; // SÄNK TEMPO
-
+        case MUTE:        ASYNC(&tg, toggleMute, 0); break;
+        case VOL_UP:      ASYNC(&tg, increaseVolume, 0); break;
+        case VOL_DOWN:    ASYNC(&tg, decreaseVolume, 0); break;
+        case PAUSE:       ASYNC(&mp, pausePlayer, 0); break;
+        case KEY_UP:      ASYNC(&mp, increaseKey, 0); break;
+        case KEY_DOWN:    ASYNC(&mp, decreaseKey, 0); break;
+        case TEMPO_UP:    ASYNC(&mp, increaseTempo, 0); break;
+        case TEMPO_DOWN:  ASYNC(&mp, decreaseTempo, 0); break;
+        case SETKEY:      ASYNC(&mp, setKey, 0); break;
+        case SETTEMPO:    ASYNC(&mp, setTempo, 0); break;
         default: break;
     }
 }
+
+
+void setKey(MusicPlayer *self, int arg) {
+    app.mode = INPUT_KEY;
+    app.cnt = 0;
+    memset(app.buffer, 0, sizeof(app.buffer));
+    SCI_WRITE(&sci0, "Enter key, end with 'e'\n");
+}
+
+void setTempo(MusicPlayer *self, int arg) {
+    app.mode = INPUT_TEMPO;
+    app.cnt = 0;
+    memset(app.buffer, 0, sizeof(app.buffer));
+    SCI_WRITE(&sci0, "Enter tempo, end with 'e'\n");
+}
+
 
 void toggleMute(ToneGenerator *self, int arg) {
   self->usr_mute = !self->usr_mute;
@@ -86,6 +131,14 @@ void decreaseKey(MusicPlayer *self, int arg) {
   SCI_WRITE(&sci0, buffer);
 }
 
+void setKeyVal(MusicPlayer *self, int arg) {
+  if (arg >= KEY_MIN && arg <= KEY_MAX) self->key = arg;
+
+  char buffer[32];
+  snprintf(buffer, sizeof(buffer), "Key: %d\n", self->key);
+  SCI_WRITE(&sci0, buffer);
+}
+
 void increaseTempo(MusicPlayer *self, int arg) {
   if (self->tempo < TEMPO_MAX) self->tempo++;
 
@@ -96,6 +149,14 @@ void increaseTempo(MusicPlayer *self, int arg) {
 
 void decreaseTempo(MusicPlayer *self, int arg) {
   if (self->tempo > TEMPO_MIN) self->tempo--;
+
+  char buffer[32];
+  snprintf(buffer, sizeof(buffer), "Tempo: %d\n", self->tempo);
+  SCI_WRITE(&sci0, buffer);
+}
+
+void setTempoVal(MusicPlayer *self, int arg) {
+  if (arg >= TEMPO_MIN && arg <= TEMPO_MAX) self->tempo = arg;
 
   char buffer[32];
   snprintf(buffer, sizeof(buffer), "Tempo: %d\n", self->tempo);

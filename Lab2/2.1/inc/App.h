@@ -11,6 +11,8 @@
 #define TEMPO_UP    'e'
 #define TEMPO_DOWN  'q'
 #define PAUSE       'p'
+#define SETKEY      'k'
+#define SETTEMPO    't'
 
 #define VOL_MAX     20
 #define VOL_MIN      0
@@ -21,9 +23,17 @@
 
 #define DAC_DATA ((volatile uint8_t *)0x4000741C)
 
+typedef enum {
+  INPUT_DEFAULT,
+  INPUT_KEY,
+  INPUT_TEMPO,
+} InputMode;
+
 typedef struct {
   Object super;
-  int example;
+  InputMode mode;
+  int cnt;
+  char buffer[12];
 } App;
 
 typedef struct {
@@ -43,7 +53,7 @@ typedef struct {
 } ToneGenerator;
 
 #define initApp()                                                              \
-  { initObject(), 1234 }
+  { initObject(), INPUT_DEFAULT, 0 }
 
   #define initMusicPlayer()                                                              \
   { initObject(), 0, 120, 0, 0 }
@@ -63,6 +73,10 @@ void decreaseKey(MusicPlayer *, int);
 void increaseTempo(MusicPlayer *, int);
 void decreaseTempo(MusicPlayer *, int);
 void pausePlayer(MusicPlayer *, int);
+void setKey(MusicPlayer *, int);
+void setTempo(MusicPlayer *, int);
+void setTempoVal(MusicPlayer *, int);
+void setKeyVal(MusicPlayer *, int);
 
 void toneGenerator(ToneGenerator *, int);
 void silence(ToneGenerator *, int);
