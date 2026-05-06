@@ -19,4 +19,5 @@
   togglestate nu inuti objektet
 
   värden initieras i
-```C{ initObject(), 1, 500, 1 }```
+
+```{ initObject(), 1, 500, 1 }```
