@@ -27,12 +27,10 @@ void receiver(App *self, int unused) {
 }
 
 void reader(App *self, int c) {
-
     SCI_WRITE(&sci0, "Rcv: '");
     SCI_WRITECHAR(&sci0, c);
     SCI_WRITE(&sci0, "'\n");
 
-    /* ---------- INPUT MODE ---------- */
     if (self->mode != INPUT_DEFAULT) {
 
         if (c != 'e' && self->cnt < 11) {
@@ -40,7 +38,6 @@ void reader(App *self, int c) {
             return;
         }
 
-        /* Finish input */
         self->buffer[self->cnt] = '\0';
         int value = atoi(self->buffer);
 
@@ -58,11 +55,11 @@ void reader(App *self, int c) {
         return;
     }
 
-    /* ---------- DEFAULT MODE ---------- */
     switch (c) {
         case MUTE:        ASYNC(&tg, toggleMute, 0); break;
         case VOL_UP:      ASYNC(&tg, increaseVolume, 0); break;
         case VOL_DOWN:    ASYNC(&tg, decreaseVolume, 0); break;
+
         case PAUSE:       ASYNC(&mp, pausePlayer, 0); break;
         case KEY_UP:      ASYNC(&mp, increaseKey, 0); break;
         case KEY_DOWN:    ASYNC(&mp, decreaseKey, 0); break;
@@ -70,7 +67,9 @@ void reader(App *self, int c) {
         case TEMPO_DOWN:  ASYNC(&mp, decreaseTempo, 0); break;
         case SETKEY:      ASYNC(&mp, setKey, 0); break;
         case SETTEMPO:    ASYNC(&mp, setTempo, 0); break;
-        default: break;
+        default:
+
+        break;
     }
 }
 
@@ -197,14 +196,15 @@ void playNote(MusicPlayer *self, int arg) {
     // beat = 60000ms / tempo
     Time beat      = MSEC(60000 / self->tempo);
     Time note_time = beat * lengths[i] / 2;  // /2 då de sparas som *2
-    Time play_time = note_time - (note_time / 16);
+    Time gap_time = note_time / 16;
+    Time play_time = note_time - gap_time;
 
     // Sätt frekvens på toneGenerator
     int freq_index = frequencies[i] + self->key;
     SYNC(&tg, setNote, getPeriods(freq_index));
 
     // Schemalägg mellanrum innan nästa not
-    SEND(play_time, 0, &tg, silence, 0);
+    SEND(play_time, gap_time, &tg, silence, 0);
 
     // Schemalägg nästa not
     self->index = (self->index + 1) % 32;

@@ -68,6 +68,11 @@ void startApp(App *, int);
 void toggleMute(ToneGenerator *, int);
 void increaseVolume(ToneGenerator *, int);
 void decreaseVolume(ToneGenerator *, int);
+void toneGenerator(ToneGenerator *, int);
+void silence(ToneGenerator *, int);
+void setNote(ToneGenerator *, int);
+
+void playNote(MusicPlayer *, int);
 void increaseKey(MusicPlayer *, int);
 void decreaseKey(MusicPlayer *, int);
 void increaseTempo(MusicPlayer *, int);
@@ -78,9 +83,5 @@ void setTempo(MusicPlayer *, int);
 void setTempoVal(MusicPlayer *, int);
 void setKeyVal(MusicPlayer *, int);
 
-void toneGenerator(ToneGenerator *, int);
-void silence(ToneGenerator *, int);
-void playNote(MusicPlayer *, int);
-void setNote(ToneGenerator *, int);
 
 #endif
