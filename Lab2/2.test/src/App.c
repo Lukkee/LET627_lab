@@ -30,10 +30,34 @@ void reader(App *self, int c) {
   SCI_WRITE(&sci0, "Rcv: \'");
   SCI_WRITECHAR(&sci0, c);
   SCI_WRITE(&sci0, "\'\n");
+
+  switch (c) {
+    case 'm': tg.mute = !tg.mute; break;
+    case '+': ASYNC(&tg, setVolume, tg.volume + 1); break;
+    case '-': ASYNC(&tg, setVolume, tg.volume - 1); break;
+
+    default: /* Integers */
+      if ( c != 'c' && c != 't' && c != 'k' && self->cnt < 11) { /* FORTSÄTT SKRIVA */
+        self->buffer[self->cnt] = c;    // spara char till buffer[cnt]
+        self->cnt++;                    // öka cnt
+      }
+      else { /* SLUTA SKRIVA */
+        self->buffer[self->cnt] = '\0';                 // null-terminator
+        int num = atoi(self->buffer);                   // ASCII to Integer(buffer)
+        self->cnt = 0;                                  // Nollställ cnt
+        memset(self->buffer, 0, sizeof(self->buffer));  // Rensa buffer
+
+        switch (c) {
+          case 't': ASYNC(&mp, setTempo, num); break;
+          case 'k': ASYNC(&mp, setKey, num); break;
+          default:  break;
+        }
+      } break;
+  }
 }
 
 void toneGenerator(ToneGenerator *self, int arg) {
-  if (!self->silence) {
+  if (!self->silence && !self->mute) {
     *DAC_DATA = self->toggle ? self->volume : 0;
     self->toggle = !self->toggle;
   } else {
@@ -48,6 +72,30 @@ int getPeriods(int index) {
                           803, 758, 715, 675, 637, 601, 568, 536, 506};
 
   return periods[index + 10];
+}
+
+void setTempo(MusicPlayer *self, int arg) {
+  if (arg <= MAX_TEMPO && arg >= MIN_TEMPO) self->tempo = arg;
+
+  char buff[16];
+  snprintf(buff, sizeof(buff), "Tempo: %d\n", self->tempo);
+  SCI_WRITE(&sci0, buff);
+}
+
+void setKey(MusicPlayer *self, int arg) {
+  if (arg <= MAX_KEY && arg >= MIN_KEY) self->key = arg;
+
+  char buff[16];
+  snprintf(buff, sizeof(buff), "Key: %d\n", self->key);
+  SCI_WRITE(&sci0, buff);
+}
+
+void setVolume(ToneGenerator *self, int arg) {
+  if (arg <= MAX_VOL && arg >= MIN_VOL) self->volume = arg;
+
+  char buff[16];
+  snprintf(buff, sizeof(buff), "Vol: %d\n", self->volume);
+  SCI_WRITE(&sci0, buff);
 }
 
 void setTone(ToneGenerator *self, int arg) {
@@ -67,37 +115,27 @@ void playNote(MusicPlayer *self, int arg) {
   Time gap_time = MSEC(50);
   Time play_time = note_time - gap_time;
 
-  char buff[16];
-  snprintf(buff, sizeof(buff), "%d : %d\n", frequencies[i], lengths[i]);
-  SCI_WRITE(&sci0, buff);
+  // beat = 60s / bpm
+  // note_time = beat * notlängd
+  // gap_time = 50ms
+  // play_time = note_time - gap_time
+  // next_start = 10us (dl för setTone) + note_time
+  // next_stop = beat * (nästa notlängd) - gap_time
 
   Time next_start = USEC(10) + note_time;
   Time next_stop = beat * (lengths[(i + 1) % 32] / 2) - gap_time;
 
-  SEND(0, USEC(10), &tg, setTone, getPeriods(frequencies[i]));
-  SEND(play_time, gap_time, &tg, silence, 0);d
-  self->index = (self->index + 1) % 32;
+  SEND(0, USEC(10), &tg, setTone, getPeriods(frequencies[i + self->key]));
+  SEND(play_time, gap_time, &tg, silence, 0);
   SEND(next_start, next_stop, &mp, playNote, 0);
+  self->index = (self->index + 1) % 32;
 }
 
 
 void startApp(App *self, int arg) {
-  CANMsg msg;
-
   CAN_INIT(&can0);
   SCI_INIT(&sci0);
-  SCI_WRITE(&sci0, "Hello, hello...\n");
-
-  msg.msgId = 1;
-  msg.nodeId = 1;
-  msg.length = 6;
-  msg.buff[0] = 'H';
-  msg.buff[1] = 'e';
-  msg.buff[2] = 'l';
-  msg.buff[3] = 'l';
-  msg.buff[4] = 'o';
-  msg.buff[5] = 0;
-  CAN_SEND(&can0, &msg);
+  SCI_WRITE(&sci0, "Cool jävla musikspelare\n");
 
   ASYNC(&tg, toneGenerator, 0);
   ASYNC(&mp, playNote, 0);
