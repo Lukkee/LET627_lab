@@ -108,14 +108,52 @@ void toneGenerator(App *self, int arg) {
 
   Time start = CURRENT_OFFSET(); // Starta tidtagning
 
-  /* -- kör funktionen -- */
-  if (!togglestate) {
-    *DAC_DATA = 0;
-    togglestate = 1;
-  } else {
-    *DAC_DATA = self->muted ? 0 : self->volume;
-    togglestate = 0;
+  for (int i = 0; i < 1000; i++) {
+    /* -- kör funktionen -- */
+    if (!togglestate) {
+      *DAC_DATA = 0;
+      togglestate = 1;
+    } else {
+      *DAC_DATA = self->muted ? 0 : self->volume;
+      togglestate = 0;
+    }
   }
+
+  Time elapsed = CURRENT_OFFSET() - start; // Stoppa tidtagning
+
+  /* -- Hantera datainsamling -- */
+  if (count < 500) {
+    if (elapsed > max_wcet) max_wcet = elapsed;
+    sum_wcet += elapsed;
+    count++;
+  }
+
+  /* -- Hantera resultat -- */
+  else if (count == 500) {
+    char buffer[128];
+    snprintf(buffer, sizeof(buffer),
+    "--- Time ---\nMax: %ld ns\nAvg: %ld ns\n",
+    ((long)max_wcet * 10),
+    (long)((sum_wcet / 500) * 10));
+    SCI_WRITE(&sci0, buffer);
+    count++;
+  }
+
+  SEND(USEC(self->period_us), self->deadline == 1 ? USEC(100) : 0, self, toneGenerator, 0);
+  // SEND ger både baseline och deadline argument till ASYNC
+  // USEC(500) tillser att 500us konverteras korrekt till processorns "tidsenheter"
+}
+
+/* == DISTORTION == */
+void backgroundLoad(BackgroundTask *self, int arg) {
+  /* -- Variabler för hantering av tiden -- */
+  static Time max_wcet = 0;
+  static long long sum_wcet = 0;
+  static int count = 0;
+
+  Time start = CURRENT_OFFSET(); // Starta tidtagning
+
+  for (int i = 0; i < self->background_loop_range; i++) {}
 
   Time elapsed = CURRENT_OFFSET() - start; // Stoppa tidtagning
 
@@ -136,15 +174,6 @@ void toneGenerator(App *self, int arg) {
     SCI_WRITE(&sci0, buffer);
     count++;
   }
-
-  SEND(USEC(self->period_us), self->deadline == 1 ? USEC(100) : 0, self, toneGenerator, 0);
-  // SEND ger både baseline och deadline argument till ASYNC
-  // USEC(500) tillser att 500us konverteras korrekt till processorns "tidsenheter"
-}
-
-/* == DISTORTION == */
-void backgroundLoad(BackgroundTask *self, int arg) {
-  for (int i = 0; i < self->background_loop_range; i++) {}
 
   SEND(USEC(1300), self->deadline == 1 ? USEC(1300) : 0, self, backgroundLoad, 0);  // Deadline = arg 2
 }
@@ -183,9 +212,6 @@ void startApp(App *self, int arg) {
   msg.buff[4] = 'o';
   msg.buff[5] = 0;
   CAN_SEND(&can0, &msg);
-
-  self->volume = 3;
-  self->period_us = 500;
 
   ASYNC(self, toneGenerator, 0);
   // ASYNC(&backtask, backgroundLoad, 0);

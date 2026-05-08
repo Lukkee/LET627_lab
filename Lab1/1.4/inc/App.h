@@ -7,13 +7,13 @@
 
 typedef struct {
   Object super;
+  int volume;
+  int period_us;
   int history[3];
   int history_index;
   char buffer[12];
   int cnt;
-  int volume;
   int muted;
-  int period_us;
   int deadline;
 } App;
 
@@ -25,7 +25,7 @@ typedef struct {
 
 // Initierar värden till objekt
 #define initApp() \
-  { initObject(), 0 }
+  { initObject(), 3, 500 }
 
 #define initBackgroundTask() \
   { initObject(), 1000 }
