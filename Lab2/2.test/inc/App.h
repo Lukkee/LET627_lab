@@ -34,10 +34,15 @@ typedef struct {
   { initObject(), 0, 120, 0 }
 
 #define initToneGenerator()                                                              \
-  { initObject(), 0, 3, 500, 0, 0 }
+  { initObject(), 0, 3, 1203, 1, 0 }
 
 void reader(App *, int);
 void receiver(App *, int);
 void startApp(App *, int);
+
+void toneGenerator(ToneGenerator *, int);
+void silence(ToneGenerator *, int);
+void setTone(ToneGenerator *, int);
+void playNote(MusicPlayer *, int);
 
 #endif
