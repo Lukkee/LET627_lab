@@ -27,10 +27,6 @@ void receiver(App *self, int unused) {
 }
 
 void reader(App *self, int c) {
-  SCI_WRITE(&sci0, "Rcv: \'");
-  SCI_WRITECHAR(&sci0, c);
-  SCI_WRITE(&sci0, "\'\n");
-
 
   switch (c) {
     case MUTEKEY:     tg.mute = !tg.mute; break;

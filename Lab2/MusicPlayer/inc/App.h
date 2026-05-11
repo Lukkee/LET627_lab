@@ -20,7 +20,6 @@
 #define VOLUPKEY    'u'
 #define VOLDOWNKEY  'd'
 #define CANCELKEY   'c'
-#define HELPKEY     'h'
 
 typedef struct {
   Object super;
