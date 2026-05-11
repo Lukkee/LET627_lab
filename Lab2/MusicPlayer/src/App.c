@@ -23,8 +23,36 @@ static int lengths[]      = {2,2,2,2,2,2,2,2,2,2,4,2,2,4,1,1,
 void receiver(App *self, int unused) {
   CANMsg msg;
   CAN_RECEIVE(&can0, &msg);
-  SCI_WRITE(&sci0, "Can msg received: ");
+  char buffer[64];
+  snprintf(buffer, sizeof(buffer), "##Can msg recieved:\nmsgID: %d, Msg: ", msg.msgId);
+  SCI_WRITE(&sci0, buffer);
   SCI_WRITE(&sci0, msg.buff);
+  SCI_WRITE(&sci0, "\n");
+
+  switch (msg.msgId) {
+    case CAN_PLAY:  ASYNC(&mp, togglePlay,  atoi(msg.buff)); break;
+    case CAN_MUTE:  ASYNC(&mp, toggleMute,  atoi(msg.buff)); break;
+    case CAN_VOL:   ASYNC(&mp, setVolume,   atoi(msg.buff)); break;
+    case CAN_TEMPO: ASYNC(&mp, setTempo,    atoi(msg.buff)); break;
+    case CAN_KEY:   ASYNC(&mp, setKey,      atoi(msg.buff)); break;
+    default: break;
+  }
+}
+
+void sendCan(int m_id, int n_id, int len, char *buffer) {
+  if (len > 7) return;
+  CANMsg msg;
+
+  msg.msgId = m_id;
+  msg.nodeId = n_id;
+  msg.length = len;
+
+  for (int i = 0; i < len; i++) {
+    msg.buff[i] = buffer[i];
+  }
+  msg.buff[len] = 0;
+
+  CAN_SEND(&can0, &msg);
 }
 
 void reader(App *self, int c) {
@@ -35,8 +63,8 @@ void reader(App *self, int c) {
   /* Hantera input */
   switch (c) {
     /* Direkta handlingar */
-    case PLAYKEY:     ASYNC(&mp, togglePlay, 0);            break;
-    case MUTEKEY:     tg.mute = !tg.mute;                   break;
+    case PLAYKEY:     ASYNC(&mp, togglePlay, !mp.play);     break;
+    case MUTEKEY:     ASYNC(&mp, toggleMute, !tg.mute);     break;
     case VOLUPKEY:    ASYNC(&tg, setVolume, tg.volume + 1); break;
     case VOLDOWNKEY:  ASYNC(&tg, setVolume, tg.volume - 1); break;
 
@@ -151,7 +179,24 @@ void playNote(MusicPlayer *self, int arg) {
 }
 
 void togglePlay(MusicPlayer *self, int arg) {
-  if (self->play = !self->play) ASYNC(self, playNote, 0);
+  if (arg) {
+    self->play = 1;
+    SCI_WRITE(&sci0, "Playback started\n");
+    ASYNC(self, playNote, 0);
+  } else {
+    self->play = 0;
+    SCI_WRITE(&sci0, "Playback stopped\n");
+  }
+}
+
+void toggleMute(MusicPlayer *self, int arg) {
+  if (arg) {
+    tg.mute = 1;
+    SCI_WRITE(&sci0, "Muted\n");
+  } else {
+    tg.mute = 0;
+    SCI_WRITE(&sci0, "Unmuted\n");
+  }
 }
 
 void startApp(App *self, int arg) {

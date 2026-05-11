@@ -22,6 +22,18 @@
 #define CANCELKEY   'c'
 #define PLAYKEY     'p'
 
+/* CAN MSGID */
+#define CAN_PLAY  0
+#define CAN_MUTE  1
+#define CAN_VOL   2
+#define CAN_TEMPO 3
+#define CAN_KEY   4
+
+typedef enum {
+  musician;
+  conductor;
+} mode;
+
 typedef struct {
   Object super;
   int cnt;
@@ -72,5 +84,6 @@ void playNote(MusicPlayer *, int);
 void setTempo(MusicPlayer *, int);
 void setKey(MusicPlayer *, int);
 void togglePlay(MusicPlayer *, int);
+void toggleMute(MusicPlayer *, int);
 
 #endif
