@@ -31,6 +31,7 @@ void reader(App *self, int c) {
   SCI_WRITECHAR(&sci0, c);
   SCI_WRITE(&sci0, "\'\n");
 
+
   switch (c) {
     case MUTEKEY:     tg.mute = !tg.mute; break;
     case VOLUPKEY:    ASYNC(&tg, setVolume, tg.volume + 1); break;
@@ -49,7 +50,7 @@ void reader(App *self, int c) {
 
         switch (c) {
           case TEMPOKEY:  ASYNC(&mp, setTempo, num); break;
-          case KEYKEY:    mp.key = num; break;
+          case KEYKEY:    ASYNC(&mp, setKey, num); break;
           default:  break;
         }
       } break;
@@ -72,7 +73,7 @@ int getPeriods(int index) {
                           1275, 1203, 1136, 1072, 1012, 955, 901, 851,
                           803, 758, 715, 675, 637, 601, 568, 536, 506};
 
-  return periods[index + mp.key + 10];
+  return periods[index + 10];
 }
 
 void setTempo(MusicPlayer *self, int arg) {
@@ -131,7 +132,7 @@ void playNote(MusicPlayer *self, int arg) {
   Time next_start = USEC(10) + note_time;
   Time next_stop = beat * (lengths[(i + 1) % 32] / 2) - gap_time;
 
-  SEND(0, USEC(10), &tg, setTone, getPeriods(frequencies[i]));
+  SEND(0, USEC(10), &tg, setTone, getPeriods(frequencies[i] + self->key));
   SEND(play_time, gap_time, &tg, silence, 0);
   self->index = (self->index + 1) % 32;
   SEND(next_start, next_stop, &mp, playNote, 0);
@@ -141,7 +142,7 @@ void playNote(MusicPlayer *self, int arg) {
 void startApp(App *self, int arg) {
   CAN_INIT(&can0);
   SCI_INIT(&sci0);
-  SCI_WRITE(&sci0, "Cool jävla musikspelare\n");
+  SCI_WRITE(&sci0, "Cool j\x84vla musikspelare\n");
 
   ASYNC(&mp, playNote, 0);
 }
