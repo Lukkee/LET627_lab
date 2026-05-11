@@ -20,6 +20,7 @@
 #define VOLUPKEY    'u'
 #define VOLDOWNKEY  'd'
 #define CANCELKEY   'c'
+#define PLAYKEY     'p'
 
 typedef struct {
   Object super;
@@ -32,6 +33,7 @@ typedef struct {
   int key;
   int tempo;
   int index;
+  int play;
 } MusicPlayer;
 
 typedef struct {
@@ -48,7 +50,7 @@ typedef struct {
   { initObject(), 0 }
 
 #define initMusicPlayer()                                                              \
-  { initObject(), 0, 120, 0 }
+  { initObject(), 0, 120, 0 , 1}
 
 #define initToneGenerator()                                                              \
   { initObject(), 0, 3, 1203, 1, 0 }
@@ -69,5 +71,6 @@ void setVolume(ToneGenerator *, int);
 void playNote(MusicPlayer *, int);
 void setTempo(MusicPlayer *, int);
 void setKey(MusicPlayer *, int);
+void togglePlay(MusicPlayer *, int);
 
 #endif

@@ -28,10 +28,15 @@ void receiver(App *self, int unused) {
 }
 
 void reader(App *self, int c) {
+  SCI_WRITE(&sci0, "Rcv: \'");
+  SCI_WRITECHAR(&sci0, c);
+  SCI_WRITE(&sci0, "\'\n");
+
   /* Hantera input */
   switch (c) {
     /* Direkta handlingar */
-    case MUTEKEY:     tg.mute = !tg.mute; break;
+    case PLAYKEY:     ASYNC(&mp, togglePlay, 0);            break;
+    case MUTEKEY:     tg.mute = !tg.mute;                   break;
     case VOLUPKEY:    ASYNC(&tg, setVolume, tg.volume + 1); break;
     case VOLDOWNKEY:  ASYNC(&tg, setVolume, tg.volume - 1); break;
 
@@ -142,7 +147,11 @@ void playNote(MusicPlayer *self, int arg) {
   SEND(0, USEC(10), &tg, setTone, getPeriods(frequencies[i] + self->key));
   SEND(play_time, gap_time, &tg, silence, 0);
   self->index = (self->index + 1) % 32;
-  SEND(next_start, next_stop, &mp, playNote, 0);
+  if (self->play) SEND(next_start, next_stop, self, playNote, 0);
+}
+
+void togglePlay(MusicPlayer *self, int arg) {
+  if (self->play = !self->play) ASYNC(self, playNote, 0);
 }
 
 void startApp(App *self, int arg) {
