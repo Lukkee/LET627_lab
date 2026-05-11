@@ -5,7 +5,11 @@
 
 typedef struct {
   Object super;
-  int example;
+  Time now;
+  Time last;
+  int pressed;
+  int mode;
+  Msg pending;
 } App;
 
 #define initApp()                                                              \
@@ -14,5 +18,7 @@ typedef struct {
 void reader(App *, int);
 void receiver(App *, int);
 void startApp(App *, int);
+void SioCallback(App *, int);
+void checkHold(App *, int);
 
 #endif
