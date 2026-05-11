@@ -6,21 +6,17 @@ Controls are sent over the serial interface through determined symbols.
 
 ### Immediate keys
 
-| Key | Action |
-|-----|--------|
-| `m` | Toggle mute |
-| `+` | Volume up |
-| `-` | Volume down |
+`m` - **toggle mute**
+`u` - **increase volume**
+`d` - **decrease volume**
 
 ### Number entry keys
 
-enter an integer, then press a command key to apply it.
+enter an integer within the [range], then press a command key to apply it.
 
-| Suffix key | Action | Range |
-|------------|--------|-------|
-| `t` | Set tempo (BPM) | 120 – 240 |
-| `k` | Set key (semitone transpose) | -5 – 5 |
-| `c` | Cancel current input | — |
+`t` - **Tempo [60, 240]**
+`k` - **Key [-5, 5]**
+`c` - **Cancel**
 
 **Example:** type `2`, `4`, `0`, `t` → sets tempo to 240 BPM
 
