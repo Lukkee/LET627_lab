@@ -32,12 +32,12 @@ void reader(App *self, int c) {
   SCI_WRITE(&sci0, "\'\n");
 
   switch (c) {
-    case 'm': tg.mute = !tg.mute; break;
-    case '+': ASYNC(&tg, setVolume, tg.volume + 1); break;
-    case '-': ASYNC(&tg, setVolume, tg.volume - 1); break;
+    case MUTEKEY: tg.mute = !tg.mute; break;
+    case VOLUPKEY: ASYNC(&tg, setVolume, tg.volume + 1); break;
+    case VOLDOWNKEY: ASYNC(&tg, setVolume, tg.volume - 1); break;
 
     default: /* Integers */
-      if ( c != 'c' && c != 't' && c != 'k' && self->cnt < 11) { /* FORTSÄTT SKRIVA */
+      if ( c != CANCELKEY && c != TEMPOKEY && c != KEYKEY && self->cnt < 11) { /* FORTSÄTT SKRIVA */
         self->buffer[self->cnt] = c;    // spara char till buffer[cnt]
         self->cnt++;                    // öka cnt
       }
@@ -48,8 +48,8 @@ void reader(App *self, int c) {
         memset(self->buffer, 0, sizeof(self->buffer));  // Rensa buffer
 
         switch (c) {
-          case 't': ASYNC(&mp, setTempo, num); break;
-          case 'k': ASYNC(&mp, setKey, num); break;
+          case TEMPOKEY: ASYNC(&mp, setTempo, num); break;
+          case KEYKEY: ASYNC(&mp, setKey, num); break;
           default:  break;
         }
       } break;

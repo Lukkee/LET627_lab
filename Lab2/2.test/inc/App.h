@@ -17,8 +17,8 @@
 #define TEMPOKEY    't'
 #define KEYKEY      'k'
 #define MUTEKEY     'm'
-#define VOLUPKEY    '+'
-#define VOLDOWNKEY  '-'
+#define VOLUPKEY    'u'
+#define VOLDOWNKEY  'd'
 #define CANCELKEY   'c'
 #define HELPKEY     'h'
 
