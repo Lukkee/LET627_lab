@@ -63,7 +63,8 @@ void toneGenerator(ToneGenerator *self, int arg) {
   } else {
     *DAC_DATA = 0;
   }
-  SEND(USEC(self->period), USEC(10), self, toneGenerator, 0);
+
+  self->pending = SEND(USEC(self->period), USEC(10), self, toneGenerator, 0);
 }
 
 int getPeriods(int index) {
@@ -101,10 +102,15 @@ void setVolume(ToneGenerator *self, int arg) {
 void setTone(ToneGenerator *self, int arg) {
   self->period = arg;
   self->silence = 0;
+  if (!self->pending) self->pending = SEND(USEC(self->period), USEC(10), self, toneGenerator, 0);
 }
 
 void silence(ToneGenerator *self, int arg) {
   self->silence = 1;
+  if (self->pending) {
+  ABORT(self->pending);
+  self->pending = NULL;
+  }
 }
 
 void playNote(MusicPlayer *self, int arg) {
@@ -127,8 +133,8 @@ void playNote(MusicPlayer *self, int arg) {
 
   SEND(0, USEC(10), &tg, setTone, getPeriods(frequencies[i + self->key]));
   SEND(play_time, gap_time, &tg, silence, 0);
-  SEND(next_start, next_stop, &mp, playNote, 0);
   self->index = (self->index + 1) % 32;
+  SEND(next_start, next_stop, &mp, playNote, 0);
 }
 
 
@@ -137,7 +143,6 @@ void startApp(App *self, int arg) {
   SCI_INIT(&sci0);
   SCI_WRITE(&sci0, "Cool jävla musikspelare\n");
 
-  ASYNC(&tg, toneGenerator, 0);
   ASYNC(&mp, playNote, 0);
 }
 

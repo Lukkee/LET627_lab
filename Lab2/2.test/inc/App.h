@@ -42,6 +42,7 @@ typedef struct {
   int period;
   int silence;
   int mute;
+  Msg pending;
 } ToneGenerator;
 
 #define initApp()                                                              \
