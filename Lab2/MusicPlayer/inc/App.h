@@ -19,8 +19,10 @@
 #define MUTEKEY     'm'
 #define VOLUPKEY    'u'
 #define VOLDOWNKEY  'd'
+#define VOLKEY      'v'
 #define CANCELKEY   'c'
 #define PLAYKEY     'p'
+#define MODEKEY     '.'
 
 /* CAN MSGID */
 #define CAN_PLAY  0
@@ -29,15 +31,13 @@
 #define CAN_TEMPO 3
 #define CAN_KEY   4
 
-typedef enum {
-  musician;
-  conductor;
-} mode;
-
 typedef struct {
   Object super;
   int cnt;
+  int mode;
   char buffer[12];
+  char canbuffer[7];
+  int conductormode;
 } App;
 
 typedef struct {
@@ -59,7 +59,7 @@ typedef struct {
 } ToneGenerator;
 
 #define initApp()                                                              \
-  { initObject(), 0 }
+  { initObject(), 0, 1 }
 
 #define initMusicPlayer()                                                              \
   { initObject(), 0, 120, 0 , 0}
@@ -69,6 +69,8 @@ typedef struct {
 
 /* APP */
 void reader(App *, int);
+void musicianReader(App *, int);
+void conductorReader(App *, int);
 void receiver(App *, int);
 void startApp(App *, int);
 

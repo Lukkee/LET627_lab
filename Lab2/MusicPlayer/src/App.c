@@ -24,7 +24,7 @@ void receiver(App *self, int unused) {
   CANMsg msg;
   CAN_RECEIVE(&can0, &msg);
   char buffer[64];
-  snprintf(buffer, sizeof(buffer), "##Can msg recieved:\nmsgID: %d, Msg: ", msg.msgId);
+  snprintf(buffer, sizeof(buffer), "##Can msg recieved: msgID: %d, Msg: ", msg.msgId);
   SCI_WRITE(&sci0, buffer);
   SCI_WRITE(&sci0, msg.buff);
   SCI_WRITE(&sci0, "\n");
@@ -56,6 +56,24 @@ void sendCan(int m_id, int n_id, int len, char *buffer) {
 }
 
 void reader(App *self, int c) {
+    if (c == MODEKEY) {
+        self->conductormode = !self->conductormode;
+        if (self->conductormode) {
+          SCI_WRITE(&sci0, "Conductor mode\n");
+        } else {
+           SCI_WRITE(&sci0, "Musician mode\n");
+        }
+        return;
+    }
+
+    if (self->conductormode) {
+        conductorReader(self, c);
+    } else {
+        musicianReader(self, c);
+    }
+}
+
+void musicianReader(App *self, int c) {
   SCI_WRITE(&sci0, "Rcv: \'");
   SCI_WRITECHAR(&sci0, c);
   SCI_WRITE(&sci0, "\'\n");
@@ -90,6 +108,53 @@ void reader(App *self, int c) {
         }
       } break;
   }
+}
+
+void conductorReader(App *self, int c) {
+  SCI_WRITE(&sci0, "Rcv: \'");
+  SCI_WRITECHAR(&sci0, c);
+  SCI_WRITE(&sci0, "\'\n");
+
+  /* Hantera input */
+  if ( c != CANCELKEY
+    && c != TEMPOKEY
+    && c != KEYKEY
+    && c != VOLKEY
+    && c != MUTEKEY
+    && c != PLAYKEY
+    && self->cnt < 11) { /* FORTSÄTT SKRIVA */
+      self->canbuffer[self->cnt] = c;    // spara char till canbuffer[cnt]
+      self->cnt++;                    // öka cnt
+  }
+
+  else { /* SLUTA SKRIVA */
+
+      self->canbuffer[self->cnt] = '\0';                 // null-terminator
+
+      switch (c) { /* Vad ska skickas */
+        case TEMPOKEY:
+          sendCan(CAN_TEMPO, 1, strlen(self->canbuffer), self->canbuffer);
+        break;
+        case KEYKEY:
+          sendCan(CAN_KEY, 1, strlen(self->canbuffer), self->canbuffer);
+        break;
+        case 'v':
+          sendCan(CAN_VOL, 1, strlen(self->canbuffer), self->canbuffer);
+        break;
+        case 'm':
+          sendCan(CAN_MUTE, 1, strlen(self->canbuffer), self->canbuffer);
+        break;
+        case 'p':
+          sendCan(CAN_PLAY, 1, strlen(self->canbuffer), self->canbuffer);
+        break;
+
+        default: break;
+        }
+
+      self->cnt = 0;                                        // Nollställ cnt
+      memset(self->canbuffer, 0, sizeof(self->canbuffer));  // Rensa canbuffer
+      }
+
 }
 
 void toneGenerator(ToneGenerator *self, int arg) {
