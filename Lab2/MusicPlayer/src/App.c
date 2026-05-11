@@ -158,8 +158,6 @@ void startApp(App *self, int arg) {
   CAN_INIT(&can0);
   SCI_INIT(&sci0);
   SCI_WRITE(&sci0, "Cool musikspelare\n");
-
-  ASYNC(&mp, playNote, 0);
 }
 
 int main() {

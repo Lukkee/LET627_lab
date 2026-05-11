@@ -50,7 +50,7 @@ typedef struct {
   { initObject(), 0 }
 
 #define initMusicPlayer()                                                              \
-  { initObject(), 0, 120, 0 , 1}
+  { initObject(), 0, 120, 0 , 0}
 
 #define initToneGenerator()                                                              \
   { initObject(), 0, 3, 1203, 1, 0 }
