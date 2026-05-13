@@ -33,9 +33,9 @@ void checkHold(App *self, int arg) {
 }
 
 
-void SioCallback(Button *self, int arg) {
+void SioCallback(App *self, int arg) {
   Time since_last = T_SAMPLE(&self->timer);
-  if (since_last < MSEC(100) && (self->count > 0 || self->pressed)) {
+  if (since_last < MSEC(100)) {
     return; // Filtrera undan contact bounces
   }
 
@@ -44,7 +44,7 @@ void SioCallback(Button *self, int arg) {
   if (!self->pressed) {
     self->pressed = 1;
     T_RESET(&self->press_timer);  // Start measuring hold duration
-    self->pending = AFTER(SEC(2), self, checkHold, 0);
+    self->pending = AFTER(SEC(1), self, checkHold, 0);
     SIO_TRIG(&sio0, 1);
   } else {
     int diff_ms = since_last / 100;           // Inter-press interval
@@ -65,65 +65,16 @@ void SioCallback(Button *self, int arg) {
       }
       }
     }
-  }
 }
 
-/*
-void SioCallback(App *self, int arg) {
-  if ((TIM_GetCounter(TIM5) / 100) - self->last < 100) return; // Filtrera undan contact bounces
-  self->now = TIM_GetCounter(TIM5) / 100; // Hämta tid
-  Time diff = self->now - self->last;     // Räkna ut mellanrum från förra
-  char buffer[32];                        // Skapa buffer för print
-
-  if (!self->pressed) {                   // Om knappen trycks in
-    SIO_TRIG(&sio0, 1);                   // Ändra till rising edge trigger
-    self->pressed = 1;                    // Sätt pressed till 1
-    self->pending = AFTER(SEC(1), self, checkHold, 0);  // Kalla på checkHold efter 1s
-  }
-
-  else {                                  // Om knappen släpps
-    ABORT(self->pending);                 // Avbryt checkHold call
-
-    SIO_TRIG(&sio0, 0);                   // Ändra till falling-edge trigger
-    self->pressed = 0;                    // Ändra pressed till 0
-
-    if (self->mode) {                     // Om checkHold gått igenom
-      self->mode = 0;                     // Sätt mode till 0
-      snprintf(buffer, sizeof(buffer), "Held for: %dms\n", (int)diff / 1000);
-      SCI_WRITE(&sci0, buffer);
-    }
-
-    else {                                // Om checkHold ej gått igenom
-      SCI_WRITE(&sci0, "MOMENTARY-PRESS\n");
-      if ((int) diff < 3000) {            // Om intervallet inte för högt
-        snprintf(buffer, sizeof(buffer), "Interval: %dms\n", (int)diff);
-        SCI_WRITE(&sci0, buffer);
-      }
-    }
-  }
-  self->last = self->now;                 // Spara denna tiden till nästa
-}
-*/
 void startApp(App *self, int arg) {
-  CANMsg msg;
-
   CAN_INIT(&can0);
   SIO_INIT(&sio0);
   SIO_TRIG(&sio0, 1);
   SCI_INIT(&sci0);
+  T_RESET(&self->press_timer);
+
   SCI_WRITE(&sci0, "Hello, hello...\n");
-
-
-  msg.msgId = 1;
-  msg.nodeId = 1;
-  msg.length = 6;
-  msg.buff[0] = 'H';
-  msg.buff[1] = 'e';
-  msg.buff[2] = 'l';
-  msg.buff[3] = 'l';
-  msg.buff[4] = 'o';
-  msg.buff[5] = 0;
-  CAN_SEND(&can0, &msg);
 }
 
 void EXTI9_5_IRQHandler(void) {
