@@ -210,17 +210,32 @@ void setVolume(ToneGenerator *self, int arg) {
 void setTone(ToneGenerator *self, int arg) {
   self->period = arg;
   self->silence = 0;
+  // SIO_WRITE(&sio0, 0);
   // Om toneGenerator inte finns i kön
   if (!self->pending) self->pending = SEND(USEC(self->period), USEC(10), self, toneGenerator, 0);
 }
 
 void silence(ToneGenerator *self, int arg) {
   self->silence = 1;
+  // SIO_WRITE(&sio0, 1);
   if (self->pending) { // Om call redan är i kö, ta bort, avbryt
     ABORT(self->pending);
     self->pending = NULL;
   }
 }
+
+void ledBeat(MusicPlayer * self, int arg){
+  Time beat = MSEC(60000 / self->tempo);
+
+  SIO_WRITE(&sio0, 0);
+  SEND(beat / 2, USEC(10), self, ledOff, 0);
+  if(self->play) SEND(beat, USEC(10), self, ledBeat, 0);
+}
+
+void ledOff(MusicPlayer * self, int arg){
+  SIO_WRITE(&sio0, 1);
+}
+
 
 void playNote(MusicPlayer *self, int arg) {
   // räknar massa skit
@@ -253,6 +268,7 @@ void togglePlay(MusicPlayer *self, int arg) {
     self->play = 1;
     SCI_WRITE(&sci0, "Playback started\n");
     ASYNC(self, playNote, 0);
+    ASYNC(self, ledBeat, 0);
   } else {
     self->play = 0;
     SCI_WRITE(&sci0, "Playback stopped\n");
@@ -287,10 +303,12 @@ void SioCallback(Button *self, int arg) {
 
   if (!self->pressed) {
     self->pressed = 1;
+    T_RESET(&self->press_timer);  // Start measuring hold duration
     self->pending = AFTER(SEC(2), self, checkHold, 0);
     SIO_TRIG(&sio0, 1);
   } else {
-    int diff_ms = since_last / 100;
+    int diff_ms = since_last / 100;           // Inter-press interval
+    int hold_ms = T_SAMPLE(&self->press_timer) / 100;  // Hold duration
     self->pressed = 0;
     T_RESET(&self->timer);
     ABORT(self->pending);
@@ -298,7 +316,7 @@ void SioCallback(Button *self, int arg) {
 
     if (self->mode) {
       self->mode = 0;
-      snprintf(buffer, sizeof(buffer), "Held for: %ds\n", diff_ms / 1000);
+      snprintf(buffer, sizeof(buffer), "Held for: %dms\n", hold_ms);
       SCI_WRITE(&sci0, buffer);
     } else {                                      // Om checkHold ej gått igenom
       SCI_WRITE(&sci0, "MOMENTARY-PRESS\n");
@@ -334,7 +352,8 @@ void startApp(App *self, int arg) {
   SIO_INIT(&sio0);
   SIO_TRIG(&sio0, 1);
 
-  T_RESET(&btn.timer);
+  T_RESET(&btn.timer);         // Initialize button timer for interval measurement
+  T_RESET(&btn.press_timer);   // Initialize press timer for hold duration
 }
 
 int main() {

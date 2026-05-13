@@ -67,6 +67,7 @@ typedef struct {
   Msg pending;
   int history[3];
   Timer timer;
+  Timer press_timer;
 } Button;
 
 #define initApp()                                                              \
@@ -79,7 +80,7 @@ typedef struct {
   { initObject(), 0, 3, 1203, 1, 0 }
 
 #define initButton()                                                              \
-  { initObject(), 0, 0, 0, 0 }
+  { initObject(), 0, 0, 0, 0, 0, initTimer(), initTimer() }
 
 /* APP */
 void reader(App *, int);
@@ -100,6 +101,8 @@ void setTempo(MusicPlayer *, int);
 void setKey(MusicPlayer *, int);
 void togglePlay(MusicPlayer *, int);
 void toggleMute(MusicPlayer *, int);
+void ledBeat(MusicPlayer *, int);
+void ledOff(MusicPlayer *, int);
 
 /* BUTTON */
 void SioCallback(Button *, int);
