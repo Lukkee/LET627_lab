@@ -6,8 +6,8 @@
 #define DAC_DATA ((volatile uint8_t *)0x4000741C)
 
 /* PARAMETRAR */
-#define MAX_TEMPO 240
-#define MIN_TEMPO 60
+#define MAX_TEMPO 300
+#define MIN_TEMPO 30
 #define MAX_KEY 5
 #define MIN_KEY -5
 #define MAX_VOL 20
@@ -64,7 +64,9 @@ typedef struct {
   Time last;
   int pressed;
   int mode;
+  int count;
   Msg pending;
+  int history[3];
 } Button;
 
 #define initApp()                                                              \
@@ -77,7 +79,7 @@ typedef struct {
   { initObject(), 0, 3, 1203, 1, 0 }
 
 #define initButton()                                                              \
-  { initObject(), 0, 0, 0, 0 }
+  { initObject(), 0, 0, 0, 0, 0 }
 
 /* APP */
 void reader(App *, int);

@@ -272,11 +272,16 @@ void checkHold(Button *self, int arg) {
   if (self->pressed) {                    // Om pressed fortfarande är igång
     self->mode = 1;                       // Sätt mode
     SCI_WRITE(&sci0, "Entered PRESS-TO-HOLD\n");
+    ASYNC(&mp, setTempo, 120);            // Sätt default-tempo
   }
 }
 
 void SioCallback(Button *self, int arg) {
-  if ((TIM_GetCounter(TIM5) / 100) - self->last < 100) return; // Filtrera undan contact bounces
+  if ((TIM_GetCounter(TIM5) / 100) - self->last < 100) {
+    self->pressed = 0;
+    ABORT(self->pending);                 // Avbryt checkHold call
+    return; // Filtrera undan contact bounces
+  }
   self->now = TIM_GetCounter(TIM5) / 100; // Hämta tid
   Time diff = self->now - self->last;     // Räkna ut mellanrum från förra
   char buffer[32];                        // Skapa buffer för print
@@ -284,7 +289,7 @@ void SioCallback(Button *self, int arg) {
   if (!self->pressed) {                   // Om knappen trycks in
     SIO_TRIG(&sio0, 1);                   // Ändra till rising edge trigger
     self->pressed = 1;                    // Sätt pressed till 1
-    self->pending = AFTER(SEC(1), self, checkHold, 0);  // Kalla på checkHold efter 1s
+    self->pending = AFTER(SEC(2), self, checkHold, 0);  // Kalla på checkHold efter 1s
   }
 
   else {                                  // Om knappen släpps
@@ -295,15 +300,27 @@ void SioCallback(Button *self, int arg) {
 
     if (self->mode) {                     // Om checkHold gått igenom
       self->mode = 0;                     // Sätt mode till 0
-      snprintf(buffer, sizeof(buffer), "Held for: %dms\n", (int)diff / 1000);
+      snprintf(buffer, sizeof(buffer), "Held for: %ds\n", (int)diff / 1000);
       SCI_WRITE(&sci0, buffer);
     }
 
     else {                                // Om checkHold ej gått igenom
       SCI_WRITE(&sci0, "MOMENTARY-PRESS\n");
       if ((int) diff < 3000) {            // Om intervallet inte för högt
+        self->history[0] = self->history[1];
+        self->history[1] = self->history[2];  // Flytta bak rest
+        self->history[2] = (int)diff;               // Nytt värde i [2]
+        self->count++;
         snprintf(buffer, sizeof(buffer), "Interval: %dms\n", (int)diff);
         SCI_WRITE(&sci0, buffer);
+      } else {
+        memset(self->history, 0, sizeof(self->history));
+        self->count = 0;
+      }
+      if (self->count >= 3) {
+        int avg = (self->history[0] + self->history[1] + self->history[2]) / 3;
+        int bpm = 60000 / avg;
+        ASYNC(&mp, setTempo, bpm);
       }
     }
   }
