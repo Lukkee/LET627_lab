@@ -37,7 +37,7 @@ void receiver(App *self, int unused) {
   switch (msg.msgId) {
     case CAN_PLAY:  ASYNC(&mp, togglePlay,  atoi(msg.buff)); break;
     case CAN_MUTE:  ASYNC(&mp, toggleMute,  atoi(msg.buff)); break;
-    case CAN_VOL:   ASYNC(&mp, setVolume,   atoi(msg.buff)); break;
+    case CAN_VOL:   ASYNC(&tg, setVolume,   atoi(msg.buff)); break;
     case CAN_TEMPO: ASYNC(&mp, setTempo,    atoi(msg.buff)); break;
     case CAN_KEY:   ASYNC(&mp, setKey,      atoi(msg.buff)); break;
     default: break;
@@ -93,7 +93,7 @@ void musicianReader(App *self, int c) {
 
     default: /* Integer input */
 
-    if ( c != CANCELKEY && c != TEMPOKEY && c != KEYKEY && self->cnt < 11) { /* FORTSÄTT SKRIVA */
+    if ( c != CANCELKEY && c != TEMPOKEY && c != KEYKEY && c != VOLKEY && self->cnt < 11) { /* FORTSÄTT SKRIVA */
         self->buffer[self->cnt] = c;    // spara char till buffer[cnt]
         self->cnt++;                    // öka cnt
       }
@@ -109,6 +109,7 @@ void musicianReader(App *self, int c) {
         switch (c) { /* Vad ska skickas */
           case TEMPOKEY:  ASYNC(&mp, setTempo, num); break;
           case KEYKEY:    ASYNC(&mp, setKey, num); break;
+          case VOLKEY:    ASYNC(&tg, setVolume, num); break;
           default:  break;
         }
       } break;
@@ -120,46 +121,53 @@ void conductorReader(App *self, int c) {
   SCI_WRITECHAR(&sci0, c);
   SCI_WRITE(&sci0, "\'\n");
 
-  /* Hantera input */
-  if ( c != CANCELKEY
-    && c != TEMPOKEY
-    && c != KEYKEY
-    && c != VOLKEY
-    && c != MUTEKEY
-    && c != PLAYKEY
-    && self->cnt < 11) { /* FORTSÄTT SKRIVA */
-      self->canbuffer[self->cnt] = c;    // spara char till canbuffer[cnt]
-      self->cnt++;                    // öka cnt
-  }
+  switch (c) {
+    /* Direkta handlingar */
+    case VOLUPKEY:    ASYNC(&tg, setVolume, tg.volume + 1); break;
+    case VOLDOWNKEY:  ASYNC(&tg, setVolume, tg.volume - 1); break;
 
-  else { /* SLUTA SKRIVA */
-
-      self->canbuffer[self->cnt] = '\0';                 // null-terminator
-
-      switch (c) { /* Vad ska skickas */
-        case TEMPOKEY:
-          sendCan(CAN_TEMPO, 1, strlen(self->canbuffer), self->canbuffer);
-        break;
-        case KEYKEY:
-          sendCan(CAN_KEY, 1, strlen(self->canbuffer), self->canbuffer);
-        break;
-        case 'v':
-          sendCan(CAN_VOL, 1, strlen(self->canbuffer), self->canbuffer);
-        break;
-        case 'm':
-          sendCan(CAN_MUTE, 1, strlen(self->canbuffer), self->canbuffer);
-        break;
-        case 'p':
-          sendCan(CAN_PLAY, 1, strlen(self->canbuffer), self->canbuffer);
-        break;
-
-        default: break;
-        }
-
-      self->cnt = 0;                                        // Nollställ cnt
-      memset(self->canbuffer, 0, sizeof(self->canbuffer));  // Rensa canbuffer
+    default: /* Integer input */
+      /* Hantera input */
+      if ( c != CANCELKEY
+        && c != TEMPOKEY
+        && c != KEYKEY
+        && c != VOLKEY
+        && c != MUTEKEY
+        && c != PLAYKEY
+        && self->cnt < 11) { /* FORTSÄTT SKRIVA */
+          self->canbuffer[self->cnt] = c;    // spara char till canbuffer[cnt]
+          self->cnt++;                    // öka cnt
       }
 
+      else { /* SLUTA SKRIVA */
+
+          self->canbuffer[self->cnt] = '\0';                 // null-terminator
+
+          switch (c) { /* Vad ska skickas */
+            case TEMPOKEY:
+              sendCan(CAN_TEMPO, 1, strlen(self->canbuffer), self->canbuffer);
+            break;
+            case KEYKEY:
+              sendCan(CAN_KEY, 1, strlen(self->canbuffer), self->canbuffer);
+            break;
+            case 'v':
+              sendCan(CAN_VOL, 1, strlen(self->canbuffer), self->canbuffer);
+            break;
+            case 'm':
+              sendCan(CAN_MUTE, 1, strlen(self->canbuffer), self->canbuffer);
+            break;
+            case 'p':
+              sendCan(CAN_PLAY, 1, strlen(self->canbuffer), self->canbuffer);
+            break;
+
+            default: break;
+            }
+
+          self->cnt = 0;                                        // Nollställ cnt
+          memset(self->canbuffer, 0, sizeof(self->canbuffer));  // Rensa canbuffer
+        }
+      break;
+  }
 }
 
 void toneGenerator(ToneGenerator *self, int arg) {
@@ -236,7 +244,6 @@ void ledOff(MusicPlayer * self, int arg){
   SIO_WRITE(&sio0, 1);
 }
 
-
 void playNote(MusicPlayer *self, int arg) {
   // räknar massa skit
   int i           = self->index;
@@ -288,8 +295,7 @@ void toggleMute(MusicPlayer *self, int arg) {
 void checkHold(Button *self, int arg) {
   if (self->pressed) {                    // Om pressed fortfarande är igång
     self->mode = 1;                       // Sätt mode
-    SCI_WRITE(&sci0, "Entered PRESS-TO-HOLD\n");
-    ASYNC(&mp, setTempo, 120);            // Sätt default-tempo
+    SCI_WRITE(&sci0, "Release to reset tempo!\n");
   }
 }
 
@@ -299,7 +305,7 @@ void SioCallback(Button *self, int arg) {
     return; // Filtrera undan contact bounces
   }
 
-  char buffer[32];
+  char buffer[64];
 
   if (!self->pressed) {
     self->pressed = 1;
@@ -314,22 +320,22 @@ void SioCallback(Button *self, int arg) {
     ABORT(self->pending);
     SIO_TRIG(&sio0, 0);
 
-    if (self->mode) {
+    if (self->mode) {                       // Om checkHold har gått igenom
       self->mode = 0;
-      snprintf(buffer, sizeof(buffer), "Held for: %dms\n", hold_ms);
-      SCI_WRITE(&sci0, buffer);
+      ASYNC(&mp, setTempo, 120);            // Sätt default-tempo
     } else {                                      // Om checkHold ej gått igenom
-      SCI_WRITE(&sci0, "MOMENTARY-PRESS\n");
       if (diff_ms < 3000) {                  // Om intervallet inte för högt
         self->history[0] = self->history[1];
         self->history[1] = self->history[2];    // Flytta bak rest
         self->history[2] = diff_ms;           // Nytt värde i [2]
         self->count++;
-        snprintf(buffer, sizeof(buffer), "Interval: %dms\n", diff_ms);
-        SCI_WRITE(&sci0, buffer);
       } else {
         memset(self->history, 0, sizeof(self->history));
         self->count = 0;
+      }
+      if (self->count < 3) {
+        snprintf(buffer, sizeof(buffer), "Press %d more times to set tempo!\n", (3 - self->count));
+        SCI_WRITE(&sci0, buffer);
       }
       if (self->count >= 3) {
         int avg = (self->history[0] + self->history[1] + self->history[2]) / 3;
