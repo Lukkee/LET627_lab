@@ -58,6 +58,15 @@ typedef struct {
   Msg pending;
 } ToneGenerator;
 
+typedef struct {
+  Object super;
+  Time now;
+  Time last;
+  int pressed;
+  int mode;
+  Msg pending;
+} Button;
+
 #define initApp()                                                              \
   { initObject(), 0, 1 }
 
@@ -66,6 +75,9 @@ typedef struct {
 
 #define initToneGenerator()                                                              \
   { initObject(), 0, 3, 1203, 1, 0 }
+
+#define initButton()                                                              \
+  { initObject(), 0, 0, 0, 0 }
 
 /* APP */
 void reader(App *, int);
@@ -80,12 +92,15 @@ void silence(ToneGenerator *, int);
 void setTone(ToneGenerator *, int);
 void setVolume(ToneGenerator *, int);
 
-
 /* MUSICPLAYER */
 void playNote(MusicPlayer *, int);
 void setTempo(MusicPlayer *, int);
 void setKey(MusicPlayer *, int);
 void togglePlay(MusicPlayer *, int);
 void toggleMute(MusicPlayer *, int);
+
+/* BUTTON */
+void SioCallback(Button *, int);
+void checkHold(Button *, int);
 
 #endif
