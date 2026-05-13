@@ -43,6 +43,8 @@ enter an integer within the [range], then press a command key to apply it.
 
 `k` - **Key [-5, 5]**
 
+`v` - **Volume [0, 20]**
+
 `c` - **Cancel**
 
 **Example:** type `2`, `4`, `0`, `t` → sets tempo to 240 BPM
