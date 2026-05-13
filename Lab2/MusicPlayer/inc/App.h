@@ -34,10 +34,9 @@
 typedef struct {
   Object super;
   int cnt;
-  int mode;
+  int conductormode;
   char buffer[12];
   char canbuffer[7];
-  int conductormode;
 } App;
 
 typedef struct {

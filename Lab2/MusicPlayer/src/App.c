@@ -78,7 +78,7 @@ void reader(App *self, int c) {
     }
 }
 
-void musicianReader(App *self, int c) {
+void conductorReader(App *self, int c) {
   SCI_WRITE(&sci0, "Rcv: \'");
   SCI_WRITECHAR(&sci0, c);
   SCI_WRITE(&sci0, "\'\n");
@@ -116,7 +116,7 @@ void musicianReader(App *self, int c) {
   }
 }
 
-void conductorReader(App *self, int c) {
+void musicianReader(App *self, int c) {
   SCI_WRITE(&sci0, "Rcv: \'");
   SCI_WRITECHAR(&sci0, c);
   SCI_WRITE(&sci0, "\'\n");
@@ -357,6 +357,7 @@ void startApp(App *self, int arg) {
 
   SIO_INIT(&sio0);
   SIO_TRIG(&sio0, 1);
+  SIO_WRITE(&sio0, 0);
 
   T_RESET(&btn.timer);         // Initialize button timer for interval measurement
   T_RESET(&btn.press_timer);   // Initialize press timer for hold duration

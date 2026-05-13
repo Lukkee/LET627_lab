@@ -4,25 +4,57 @@
 
 Controls are sent over the serial interface through determined symbols.
 
-### Immediate keys
+### Modes
 
-`m` - **toggle mute**
+`.` - **switches between the two modes**
+
+#### Musician Mode
+Sends commands over the CAN bus,
+toggle-keys are entered using a flag prefix.
+
+**Example:**
+
+type `1`, `m` → Mutes the player
+
+type `0`, `m` → Unmutes the player
+
+#### Conductor Mode
+Sends commands directly through keyboard input,
+
+toggle-keys work as toggles.
+
+### Immediate keys
 
 `u` - **increase volume**
 
 `d` - **decrease volume**
 
+#### Toggle-keys
+
+`m` - **toggle mute**
+
+`p` - **toggle playback**
+
 ### Number entry keys
 
 enter an integer within the [range], then press a command key to apply it.
 
-`t` - **Tempo [60, 240]**
+`t` - **Tempo [30, 300]**
 
 `k` - **Key [-5, 5]**
 
 `c` - **Cancel**
 
 **Example:** type `2`, `4`, `0`, `t` → sets tempo to 240 BPM
+
+### User-button
+The user-button is used for setting and resetting the tempo, tapping a minimum of three times with an interval between 100ms - 3000ms will set the tempo to
+the average of the last three presses.
+
+Holding the user-button for at least two seconds will reset the tempo to 120bpm.
+
+### Led
+The led will flash with the tempo while playback is active.
 
 ### Message flow
 
@@ -32,4 +64,5 @@ playNote → setTone  (starts oscillator)
          → playNote (schedules next note)
 
 toneGenerator → toneGenerator (self-rescheduling oscillator loop)
+
 ```
