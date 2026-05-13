@@ -60,13 +60,13 @@ typedef struct {
 
 typedef struct {
   Object super;
-  Time now;
   Time last;
   int pressed;
   int mode;
   int count;
   Msg pending;
   int history[3];
+  Timer timer;
 } Button;
 
 #define initApp()                                                              \
@@ -79,7 +79,7 @@ typedef struct {
   { initObject(), 0, 3, 1203, 1, 0 }
 
 #define initButton()                                                              \
-  { initObject(), 0, 0, 0, 0, 0 }
+  { initObject(), 0, 0, 0, 0 }
 
 /* APP */
 void reader(App *, int);
