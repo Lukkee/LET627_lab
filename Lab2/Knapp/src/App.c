@@ -46,10 +46,14 @@ void SioCallback(App *self, int arg) {
     self->pressed = 0;
     if (self->mode) { /* OM HOLD */
       self->mode = 0;
-      snprintf(buffer, sizeof(buffer), "Held for: %dms\n", (int)diff);
+      snprintf(buffer, sizeof(buffer), "Held for: %dms\n", (int)diff / 1000);
       SCI_WRITE(&sci0, buffer);
     } else {          /* OM MOMENTARY */
       SCI_WRITE(&sci0, "MOMENTARY-PRESS\n");
+      if ((int) diff < 3000) {
+        snprintf(buffer, sizeof(buffer), "Interval: %dms\n", (int)diff);
+        SCI_WRITE(&sci0, buffer);
+      }
     }
     ABORT(self->pending);
   }
