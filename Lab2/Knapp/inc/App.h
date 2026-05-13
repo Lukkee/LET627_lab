@@ -5,15 +5,15 @@
 
 typedef struct {
   Object super;
-  Time now;
-  Time last;
+  Timer timer;
+  Timer press_timer;
   int pressed;
   int mode;
   Msg pending;
 } App;
 
 #define initApp()                                                              \
-  { initObject(), 1234 }
+  { initObject(), initTimer(), initTimer(), 0, 0, 0 }
 
 void reader(App *, int);
 void receiver(App *, int);

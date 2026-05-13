@@ -32,6 +32,43 @@ void checkHold(App *self, int arg) {
   }
 }
 
+
+void SioCallback(Button *self, int arg) {
+  Time since_last = T_SAMPLE(&self->timer);
+  if (since_last < MSEC(100) && (self->count > 0 || self->pressed)) {
+    return; // Filtrera undan contact bounces
+  }
+
+  char buffer[64];
+
+  if (!self->pressed) {
+    self->pressed = 1;
+    T_RESET(&self->press_timer);  // Start measuring hold duration
+    self->pending = AFTER(SEC(2), self, checkHold, 0);
+    SIO_TRIG(&sio0, 1);
+  } else {
+    int diff_ms = since_last / 100;           // Inter-press interval
+    int hold_ms = T_SAMPLE(&self->press_timer) / 100;  // Hold duration
+    self->pressed = 0;
+    T_RESET(&self->timer);
+    ABORT(self->pending);
+    SIO_TRIG(&sio0, 0);
+
+    if (self->mode) {                       // Om checkHold har gått igenom
+      self->mode = 0;
+      snprintf(buffer, sizeof(buffer), "Held for: %ds\n", (int)hold_ms / 1000);
+      SCI_WRITE(&sci0, buffer);
+    } else {                                      // Om checkHold ej gått igenom
+      if (diff_ms < 3000) {                  // Om intervallet inte för högt
+        snprintf(buffer, sizeof(buffer), "Interval: %dms\n", (int)diff_ms);
+        SCI_WRITE(&sci0, buffer);
+      }
+      }
+    }
+  }
+}
+
+/*
 void SioCallback(App *self, int arg) {
   if ((TIM_GetCounter(TIM5) / 100) - self->last < 100) return; // Filtrera undan contact bounces
   self->now = TIM_GetCounter(TIM5) / 100; // Hämta tid
@@ -66,7 +103,7 @@ void SioCallback(App *self, int arg) {
   }
   self->last = self->now;                 // Spara denna tiden till nästa
 }
-
+*/
 void startApp(App *self, int arg) {
   CANMsg msg;
 
