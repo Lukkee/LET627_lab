@@ -323,6 +323,8 @@ void SioCallback(Button *self, int arg) {
       ASYNC(&mp, setTempo, 120);            // Sätt default-tempo
     } else {                                      // Om checkHold ej gått igenom
       if (diff_ms < 3000) {                  // Om intervallet inte för högt
+        snprintf(buffer, sizeof(buffer), "intervall: %d\n", (int)diff_ms);
+        SCI_WRITE(&sci0, buffer);
         self->history[0] = self->history[1];
         self->history[1] = self->history[2];    // Flytta bak rest
         self->history[2] = diff_ms;           // Nytt värde i [2]
@@ -336,9 +338,14 @@ void SioCallback(Button *self, int arg) {
         SCI_WRITE(&sci0, buffer);
       }
       if (self->count >= 3) {
-        int avg = (self->history[0] + self->history[1] + self->history[2]) / 3;
-        int bpm = 60000 / avg;
-        ASYNC(&mp, setTempo, bpm);
+        int a = self->history[0];
+        int b = self->history[1];
+        int c = self->history[2];
+        if (abs(a - b) <= 100 && abs(a - c) <= 100 && abs(b - c) <= 100) {
+          int avg = (self->history[0] + self->history[1] + self->history[2]) / 3;
+          int bpm = 60000 / avg;
+          ASYNC(&mp, setTempo, bpm);
+        }
       }
     }
   }
@@ -357,7 +364,7 @@ void startApp(App *self, int arg) {
   SIO_TRIG(&sio0, 1);
   SIO_WRITE(&sio0, 0);
 
-  T_RESET(&btn.timer);         // Initialize button timer for interval measurement
+  T_RESET(&btn.timer);
 }
 
 int main() {
