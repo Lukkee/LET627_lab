@@ -36,9 +36,8 @@
 typedef struct {
   Object super;
   int cnt;
-  int conductormode;
-  char buffer[12];
-  char canbuffer[7];
+  int mode;
+  char buffer[7];
 } App;
 
 typedef struct {
@@ -72,7 +71,7 @@ typedef struct {
 } Button;
 
 #define initApp()                                                              \
-  { initObject(), 0, 1 }
+  { initObject(), 0, 0 }
 
 #define initMusicPlayer()                                                              \
   { initObject(), 0, 120, 0 , 0, 0}

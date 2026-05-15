@@ -9,21 +9,15 @@ Controls are sent over the serial interface through determined symbols.
 `.` - **switches between the two modes**
 
 #### Musician Mode
-Sends commands over the CAN bus,
-toggle-keys are entered using a flag prefix.
-
-**Example:**
-
-type `1`, `m` → Mutes the player
-
-type `0`, `m` → Unmutes the player
+Listens to commands from the CAN bus.
 
 #### Conductor Mode
-Sends commands directly through keyboard input,
+Listens to commands from keyboard input.
 
+### Keys
 toggle-keys work as toggles.
 
-### Immediate keys
+#### Immediate keys
 
 `u` - **increase volume**
 
@@ -34,6 +28,14 @@ toggle-keys work as toggles.
 `m` - **toggle mute**
 
 `p` - **toggle playback**
+
+toggle-keys are entered using a flag prefix.
+
+**Example:**
+
+type `1`, `m` → Mutes the player
+
+type `0`, `m` → Unmutes the player
 
 ### Number entry keys
 
