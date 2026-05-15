@@ -195,7 +195,7 @@ void setTempo(MusicPlayer *self, int arg) {
   if (arg <= MAX_TEMPO && arg >= MIN_TEMPO) self->tempo = arg;
 
   char buff[16];
-  snprintf(buff, sizeof(buff), "Tempo: %d\n", self->tempo);
+  snprintf(buff, sizeof(buff), "Tempo: %d bpm\n", self->tempo);
   SCI_WRITE(&sci0, buff);
 }
 
@@ -293,8 +293,11 @@ void toggleMute(MusicPlayer *self, int arg) {
 }
 
 void checkHold(Button *self, int arg) {
-  if (self->pressed) {                    // Om pressed fortfarande är igång
+  if (arg == 1 && self->pressed) {                    // Om pressed fortfarande är igång
     self->mode = 1;                       // Sätt mode
+    SCI_WRITE(&sci0, "ENTERED PRESS-AND-HOLD mode!\n");
+    self->pending = AFTER(SEC(1), self, checkHold, 2);
+  } else if (self->pressed) {
     SCI_WRITE(&sci0, "Release to reset tempo!\n");
   }
 }
@@ -305,25 +308,28 @@ void SioCallback(Button *self, int arg) {
     return; // Filtrera undan contact bounces
   }
 
+  ABORT(self->pending);
+
   char buffer[64];
 
   if (!self->pressed) {
     self->pressed = 1;
-    self->pending = AFTER(SEC(2), self, checkHold, 0);
+    self->pending = AFTER(SEC(1), self, checkHold, 1);
     SIO_TRIG(&sio0, 1);
   } else {
     int diff_ms = since_last / 100;           // Inter-press interval
     self->pressed = 0;
     T_RESET(&self->timer);
-    ABORT(self->pending);
     SIO_TRIG(&sio0, 0);
 
     if (self->mode) {                       // Om checkHold har gått igenom
+      snprintf(buffer, sizeof(buffer), "Held for %ds\n", diff_ms / 1000);
+      SCI_WRITE(&sci0, buffer);
+      if (self->mode == 2) ASYNC(&mp, setTempo, 120);
       self->mode = 0;
-      ASYNC(&mp, setTempo, 120);            // Sätt default-tempo
     } else {                                      // Om checkHold ej gått igenom
       if (diff_ms < 3000) {                  // Om intervallet inte för högt
-        snprintf(buffer, sizeof(buffer), "intervall: %d\n", (int)diff_ms);
+        snprintf(buffer, sizeof(buffer), "intervall: %dms\n", (int)diff_ms);
         SCI_WRITE(&sci0, buffer);
         self->history[0] = self->history[1];
         self->history[1] = self->history[2];    // Flytta bak rest
