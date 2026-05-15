@@ -25,11 +25,13 @@
 #define MODEKEY     '.'
 
 /* CAN MSGID */
-#define CAN_PLAY  0
-#define CAN_MUTE  1
-#define CAN_VOL   2
-#define CAN_TEMPO 3
-#define CAN_KEY   4
+#define CAN_PLAY    0
+#define CAN_MUTE    1
+#define CAN_VOL     2
+#define CAN_TEMPO   3
+#define CAN_KEY     4
+#define CAN_INCVOL  5
+#define CAN_DECVOL  6
 
 typedef struct {
   Object super;
@@ -93,6 +95,8 @@ void toneGenerator(ToneGenerator *, int);
 void silence(ToneGenerator *, int);
 void setTone(ToneGenerator *, int);
 void setVolume(ToneGenerator *, int);
+void incVolume(ToneGenerator *, int);
+void decVolume(ToneGenerator *, int);
 
 /* MUSICPLAYER */
 void playNote(MusicPlayer *, int);

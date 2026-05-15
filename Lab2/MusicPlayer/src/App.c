@@ -32,16 +32,21 @@ void receiver(App *self, int unused) {
   snprintf(buffer, sizeof(buffer), "##Can msg recieved: msgID: %d, Msg: ", msg.msgId);
   SCI_WRITE(&sci0, buffer);
   SCI_WRITE(&sci0, msg.buff);
-  SCI_WRITE(&sci0, "\n");
 
-  switch (msg.msgId) {
-    case CAN_PLAY:  ASYNC(&mp, togglePlay,  atoi(msg.buff)); break;
-    case CAN_MUTE:  ASYNC(&mp, toggleMute,  atoi(msg.buff)); break;
-    case CAN_VOL:   ASYNC(&tg, setVolume,   atoi(msg.buff)); break;
-    case CAN_TEMPO: ASYNC(&mp, setTempo,    atoi(msg.buff)); break;
-    case CAN_KEY:   ASYNC(&mp, setKey,      atoi(msg.buff)); break;
-    default: break;
+  if (self->mode) {
+    SCI_WRITE(&sci0, "**");
+    switch (msg.msgId) {
+      case CAN_PLAY:    ASYNC(&mp, togglePlay,  atoi(msg.buff)); break;
+      case CAN_MUTE:    ASYNC(&mp, toggleMute,  atoi(msg.buff)); break;
+      case CAN_VOL:     ASYNC(&tg, setVolume,   atoi(msg.buff)); break;
+      case CAN_INCVOL:  ASYNC(&tg, incVolume,   atoi(msg.buff)); break;
+      case CAN_DECVOL:  ASYNC(&tg, decVolume,   atoi(msg.buff)); break;
+      case CAN_TEMPO:   ASYNC(&mp, setTempo,    atoi(msg.buff)); break;
+      case CAN_KEY:     ASYNC(&mp, setKey,      atoi(msg.buff)); break;
+      default: break;
+    }
   }
+  SCI_WRITE(&sci0, "\n");
 }
 
 void sendCan(int m_id, int n_id, int len, char *buffer) {
@@ -61,113 +66,73 @@ void sendCan(int m_id, int n_id, int len, char *buffer) {
 }
 
 void reader(App *self, int c) {
-    if (c == MODEKEY) {
-        self->conductormode = !self->conductormode;
-        if (self->conductormode) {
-          SCI_WRITE(&sci0, "Conductor mode\n");
-        } else {
-           SCI_WRITE(&sci0, "Musician mode\n");
-        }
-        return;
-    }
-
-    if (self->conductormode) {
-        conductorReader(self, c);
-    } else {
-        musicianReader(self, c);
-    }
-}
-
-void conductorReader(App *self, int c) {
   SCI_WRITE(&sci0, "Rcv: \'");
   SCI_WRITECHAR(&sci0, c);
   SCI_WRITE(&sci0, "\'\n");
 
-  /* Hantera input */
-  switch (c) {
-    /* Direkta handlingar */
-    case PLAYKEY:     ASYNC(&mp, togglePlay, !mp.play);     break;
-    case MUTEKEY:     ASYNC(&mp, toggleMute, !tg.mute);     break;
-    case VOLUPKEY:    ASYNC(&tg, setVolume, tg.volume + 1); break;
-    case VOLDOWNKEY:  ASYNC(&tg, setVolume, tg.volume - 1); break;
+  char buff[7];
 
-    default: /* Integer input */
+  switch (c)
+  {
+  case VOLUPKEY:
+    sendCan(CAN_INCVOL, 1, 1, NULL);
+    if (!self->mode) ASYNC(&tg, incVolume, 0);
+    break;
 
-    if ( c != CANCELKEY && c != TEMPOKEY && c != KEYKEY && c != VOLKEY && self->cnt < 11) { /* FORTSÄTT SKRIVA */
+  case VOLDOWNKEY:
+    sendCan(CAN_DECVOL, 1, 1, NULL);
+    if (!self->mode) ASYNC(&tg, decVolume, 0);
+    break;
+
+  case MODEKEY:
+    if (self->mode = !self->mode) SCI_WRITE(&sci0, "Musician mode!\n");
+    else SCI_WRITE(&sci0, "Conductor mode!\n");
+    memset(self->buffer, 0, sizeof(self->buffer));
+    self->cnt = 0;
+    break;
+
+  default:
+    if ( c != CANCELKEY
+      && c != TEMPOKEY
+      && c != KEYKEY
+      && c != VOLKEY
+      && c != MUTEKEY
+      && c != PLAYKEY
+      && self->cnt < 11) { /* FORTSÄTT SKRIVA */
         self->buffer[self->cnt] = c;    // spara char till buffer[cnt]
         self->cnt++;                    // öka cnt
       }
-
       else { /* SLUTA SKRIVA */
-
-        self->buffer[self->cnt] = '\0';                 // null-terminator
-        int num = atoi(self->buffer);                   // ASCII to Integer(buffer)
-
-        self->cnt = 0;                                  // Nollställ cnt
-        memset(self->buffer, 0, sizeof(self->buffer));  // Rensa buffer
-
-        switch (c) { /* Vad ska skickas */
-          case TEMPOKEY:  ASYNC(&mp, setTempo, num); break;
-          case KEYKEY:    ASYNC(&mp, setKey, num); break;
-          case VOLKEY:    ASYNC(&tg, setVolume, num); break;
-          default:  break;
-        }
-      } break;
-  }
-}
-
-void musicianReader(App *self, int c) {
-  SCI_WRITE(&sci0, "Rcv: \'");
-  SCI_WRITECHAR(&sci0, c);
-  SCI_WRITE(&sci0, "\'\n");
-
-  switch (c) {
-    /* Direkta handlingar */
-    case VOLUPKEY:    ASYNC(&tg, setVolume, tg.volume + 1); break;
-    case VOLDOWNKEY:  ASYNC(&tg, setVolume, tg.volume - 1); break;
-
-    default: /* Integer input */
-      /* Hantera input */
-      if ( c != CANCELKEY
-        && c != TEMPOKEY
-        && c != KEYKEY
-        && c != VOLKEY
-        && c != MUTEKEY
-        && c != PLAYKEY
-        && self->cnt < 11) { /* FORTSÄTT SKRIVA */
-          self->canbuffer[self->cnt] = c;    // spara char till canbuffer[cnt]
-          self->cnt++;                    // öka cnt
-      }
-
-      else { /* SLUTA SKRIVA */
-
-          self->canbuffer[self->cnt] = '\0';                 // null-terminator
-
+          self->buffer[self->cnt] = '\0';                 // null-terminator
+          int num = atoi(self->buffer);
           switch (c) { /* Vad ska skickas */
             case TEMPOKEY:
-              sendCan(CAN_TEMPO, 1, strlen(self->canbuffer), self->canbuffer);
+              sendCan(CAN_TEMPO, 1, strlen(self->buffer), self->buffer);
+              if (!self->mode) ASYNC(&mp, setTempo, num);
             break;
             case KEYKEY:
-              sendCan(CAN_KEY, 1, strlen(self->canbuffer), self->canbuffer);
-            break;
+              sendCan(CAN_KEY, 1, strlen(self->buffer), self->buffer);
+              if (!self->mode) ASYNC(&mp, setKey, num);
+              break;
             case 'v':
-              sendCan(CAN_VOL, 1, strlen(self->canbuffer), self->canbuffer);
-            break;
+              sendCan(CAN_VOL, 1, strlen(self->buffer), self->buffer);
+              if (!self->mode) ASYNC(&tg, setVolume, num);
+              break;
             case 'm':
-              sendCan(CAN_MUTE, 1, strlen(self->canbuffer), self->canbuffer);
-            break;
+              sendCan(CAN_MUTE, 1, strlen(self->buffer), self->buffer);
+              if (!self->mode) ASYNC(&tg, toggleMute, num);
+              break;
             case 'p':
-              sendCan(CAN_PLAY, 1, strlen(self->canbuffer), self->canbuffer);
-            break;
-
+              sendCan(CAN_PLAY, 1, strlen(self->buffer), self->buffer);
+              if (!self->mode) ASYNC(&mp, togglePlay, num);
+              break;
             default: break;
             }
-
           self->cnt = 0;                                        // Nollställ cnt
-          memset(self->canbuffer, 0, sizeof(self->canbuffer));  // Rensa canbuffer
+          memset(self->buffer, 0, sizeof(self->buffer));  // Rensa buffer
         }
       break;
-  }
+    }
 }
 
 void toneGenerator(ToneGenerator *self, int arg) {
@@ -211,6 +176,22 @@ void setKey(MusicPlayer *self, int arg) {
 
 void setVolume(ToneGenerator *self, int arg) {
   if (arg <= MAX_VOL && arg >= MIN_VOL) self->volume = arg;
+
+  char buff[16];
+  snprintf(buff, sizeof(buff), "Vol: %d\n", self->volume);
+  SCI_WRITE(&sci0, buff);
+}
+
+void incVolume(ToneGenerator *self, int arg) {
+  if ((self->volume + 1) < MAX_VOL) self->volume++;
+
+  char buff[16];
+  snprintf(buff, sizeof(buff), "Vol: %d\n", self->volume);
+  SCI_WRITE(&sci0, buff);
+}
+
+void decVolume(ToneGenerator *self, int arg) {
+  if ((self->volume - 1) > MIN_VOL) self->volume--;
 
   char buff[16];
   snprintf(buff, sizeof(buff), "Vol: %d\n", self->volume);
@@ -275,9 +256,9 @@ void playNote(MusicPlayer *self, int arg) {
 
 void togglePlay(MusicPlayer *self, int arg) {
   if (arg) {
-    self->play = 1;
     SCI_WRITE(&sci0, "Playback started\n");
-    ASYNC(self, playNote, 0);
+    if (!self->play) ASYNC(self, playNote, 0);
+    self->play = 1;
     ASYNC(self, ledBeat, 0);
   } else {
     self->play = 0;
