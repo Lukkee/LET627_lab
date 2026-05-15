@@ -192,6 +192,8 @@ int getPeriods(int index) {
 }
 
 void setTempo(MusicPlayer *self, int arg) {
+  ABORT(self->ledPending);
+  self->ledPending = NULL;
   if (arg <= MAX_TEMPO && arg >= MIN_TEMPO) self->tempo = arg;
 
   char buff[16];
@@ -221,6 +223,7 @@ void setTone(ToneGenerator *self, int arg) {
   // SIO_WRITE(&sio0, 0);
   // Om toneGenerator inte finns i kön
   if (!self->pending) self->pending = SEND(USEC(self->period), USEC(10), self, toneGenerator, 0);
+  if (!mp.ledPending) ASYNC(&mp, ledBeat, 0);
 }
 
 void silence(ToneGenerator *self, int arg) {
@@ -237,7 +240,7 @@ void ledBeat(MusicPlayer * self, int arg){
 
   SIO_WRITE(&sio0, 0);
   SEND(beat / 2, USEC(10), self, ledOff, 0);
-  if(self->play) SEND(beat, USEC(10), self, ledBeat, 0);
+  if(self->play) self->ledPending = SEND(beat, USEC(10), self, ledBeat, 0);
 }
 
 void ledOff(MusicPlayer * self, int arg){
@@ -279,6 +282,7 @@ void togglePlay(MusicPlayer *self, int arg) {
   } else {
     self->play = 0;
     SCI_WRITE(&sci0, "Playback stopped\n");
+    SIO_WRITE(&sio0, 1);
   }
 }
 
@@ -371,7 +375,7 @@ void startApp(App *self, int arg) {
 
   SIO_INIT(&sio0);
   SIO_TRIG(&sio0, 1);
-  SIO_WRITE(&sio0, 0);
+  SIO_WRITE(&sio0, 1);
 
   T_RESET(&btn.timer);
   T_RESET(&btn.timer_p);
