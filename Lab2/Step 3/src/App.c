@@ -33,11 +33,13 @@ void receiver(App *self, int unused) {
   if (self->mode) {
     SCI_WRITE(&sci0, "**");
     switch (msg.msgId) {
-      case CAN_PLAY:  ASYNC(&mp, togglePlay,  atoi(msg.buff)); break;
-      case CAN_MUTE:  ASYNC(&mp, toggleMute,  atoi(msg.buff)); break;
-      case CAN_VOL:   ASYNC(&mp, setVolume,   atoi(msg.buff)); break;
-      case CAN_TEMPO: ASYNC(&mp, setTempo,    atoi(msg.buff)); break;
-      case CAN_KEY:   ASYNC(&mp, setKey,      atoi(msg.buff)); break;
+      case CAN_PLAY:    ASYNC(&mp, togglePlay,  atoi(msg.buff)); break;
+      case CAN_MUTE:    ASYNC(&mp, toggleMute,  atoi(msg.buff)); break;
+      case CAN_VOL:     ASYNC(&tg, setVolume,   atoi(msg.buff)); break;
+      case CAN_INCVOL:  ASYNC(&tg, incVolume,   atoi(msg.buff)); break;
+      case CAN_DECVOL:  ASYNC(&tg, decVolume,   atoi(msg.buff)); break;
+      case CAN_TEMPO:   ASYNC(&mp, setTempo,    atoi(msg.buff)); break;
+      case CAN_KEY:     ASYNC(&mp, setKey,      atoi(msg.buff)); break;
       default: break;
     }
   }
@@ -71,14 +73,13 @@ void reader(App *self, int c) {
   switch (c)
   {
   case VOLUPKEY:
-    snprintf(buff, sizeof(buff), "%d", tg.volume + 1);
-    sendCan(CAN_VOL, 1, strlen(buff), buff);
-    if (!self->mode) ASYNC(&tg, setVolume, tg.volume + 1);
+    sendCan(CAN_INCVOL, 1, 1, NULL);
+    if (!self->mode) ASYNC(&tg, incVolume, 0);
     break;
+
   case VOLDOWNKEY:
-    snprintf(buff, sizeof(buff), "%d", tg.volume - 1);
-    sendCan(CAN_VOL, 1, strlen(buff), buff);
-    if (!self->mode) ASYNC(&tg, setVolume, tg.volume - 1);
+    sendCan(CAN_DECVOL, 1, 1, NULL);
+    if (!self->mode) ASYNC(&tg, decVolume, 0);
     break;
 
   case MODEKEY:
@@ -172,6 +173,22 @@ void setKey(MusicPlayer *self, int arg) {
 
 void setVolume(ToneGenerator *self, int arg) {
   if (arg <= MAX_VOL && arg >= MIN_VOL) self->volume = arg;
+
+  char buff[16];
+  snprintf(buff, sizeof(buff), "Vol: %d\n", self->volume);
+  SCI_WRITE(&sci0, buff);
+}
+
+void incVolume(ToneGenerator *self, int arg) {
+  if ((self->volume + 1) < MAX_VOL) self->volume++;
+
+  char buff[16];
+  snprintf(buff, sizeof(buff), "Vol: %d\n", self->volume);
+  SCI_WRITE(&sci0, buff);
+}
+
+void decVolume(ToneGenerator *self, int arg) {
+  if ((self->volume - 1) > MIN_VOL) self->volume--;
 
   char buff[16];
   snprintf(buff, sizeof(buff), "Vol: %d\n", self->volume);
