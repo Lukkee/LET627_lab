@@ -60,6 +60,7 @@ typedef struct {
 typedef struct {
   Object super;
   Timer timer;
+  Timer timer_p;
   int pressed;
   int mode;
   int count;
@@ -77,7 +78,7 @@ typedef struct {
   { initObject(), 0, 3, 1203, 1, 0, 0 }
 
 #define initButton()                                                              \
-  { initObject(), initTimer(), 0, 0, 0, 0 }
+  { initObject(), initTimer(), initTimer(), 0, 0, 0, 0 }
 
 /* APP */
 void reader(App *, int);

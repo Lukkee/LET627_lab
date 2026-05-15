@@ -304,13 +304,14 @@ void checkHold(Button *self, int arg) {
 
 void SioCallback(Button *self, int arg) {
   Time since_last = T_SAMPLE(&self->timer);
+  Time since_last_p = T_SAMPLE(&self->timer_p);
   if (since_last < MSEC(100)) {
     return; // Filtrera undan contact bounces
   }
 
-  int diff_ms = since_last / 100;           // Inter-press interval
+  T_RESET(&self->timer_p);
+  int press_ms = since_last_p / 100;           // Inter-press interval
   ABORT(self->pending);
-  T_RESET(&self->timer);
 
   char buffer[64];
 
@@ -319,11 +320,13 @@ void SioCallback(Button *self, int arg) {
     self->pending = AFTER(SEC(1), self, checkHold, 1);
     SIO_TRIG(&sio0, 1);
   } else {
+    T_RESET(&self->timer);
+    int diff_ms = since_last / 100;           // Inter-press interval
     self->pressed = 0;
     SIO_TRIG(&sio0, 0);
 
     if (self->mode) {                       // Om checkHold har gått igenom
-      snprintf(buffer, sizeof(buffer), "Held for %ds\n", diff_ms / 1000);
+      snprintf(buffer, sizeof(buffer), "Held for %ds\n", press_ms / 1000);
       SCI_WRITE(&sci0, buffer);
       if (self->mode == 2) ASYNC(&mp, setTempo, 120);
       self->mode = 0;
@@ -371,6 +374,7 @@ void startApp(App *self, int arg) {
   SIO_WRITE(&sio0, 0);
 
   T_RESET(&btn.timer);
+  T_RESET(&btn.timer_p);
 }
 
 int main() {
