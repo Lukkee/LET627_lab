@@ -308,7 +308,9 @@ void SioCallback(Button *self, int arg) {
     return; // Filtrera undan contact bounces
   }
 
+  int diff_ms = since_last / 100;           // Inter-press interval
   ABORT(self->pending);
+  T_RESET(&self->timer);
 
   char buffer[64];
 
@@ -317,9 +319,7 @@ void SioCallback(Button *self, int arg) {
     self->pending = AFTER(SEC(1), self, checkHold, 1);
     SIO_TRIG(&sio0, 1);
   } else {
-    int diff_ms = since_last / 100;           // Inter-press interval
     self->pressed = 0;
-    T_RESET(&self->timer);
     SIO_TRIG(&sio0, 0);
 
     if (self->mode) {                       // Om checkHold har gått igenom
