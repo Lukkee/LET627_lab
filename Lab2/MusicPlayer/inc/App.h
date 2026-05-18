@@ -96,13 +96,13 @@ void setTone(ToneGenerator *, int);
 void setVolume(ToneGenerator *, int);
 void incVolume(ToneGenerator *, int);
 void decVolume(ToneGenerator *, int);
+void toggleMute(ToneGenerator *, int);
 
 /* MUSICPLAYER */
 void playNote(MusicPlayer *, int);
 void setTempo(MusicPlayer *, int);
 void setKey(MusicPlayer *, int);
 void togglePlay(MusicPlayer *, int);
-void toggleMute(MusicPlayer *, int);
 void ledBeat(MusicPlayer *, int);
 void ledOff(MusicPlayer *, int);
 

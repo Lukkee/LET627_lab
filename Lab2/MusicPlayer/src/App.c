@@ -37,7 +37,7 @@ void receiver(App *self, int unused) {
     SCI_WRITE(&sci0, "**");
     switch (msg.msgId) {
       case CAN_PLAY:    ASYNC(&mp, togglePlay,  atoi(msg.buff)); break;
-      case CAN_MUTE:    ASYNC(&mp, toggleMute,  atoi(msg.buff)); break;
+      case CAN_MUTE:    ASYNC(&tg, toggleMute,  atoi(msg.buff)); break;
       case CAN_VOL:     ASYNC(&tg, setVolume,   atoi(msg.buff)); break;
       case CAN_INCVOL:  ASYNC(&tg, incVolume,   atoi(msg.buff)); break;
       case CAN_DECVOL:  ASYNC(&tg, decVolume,   atoi(msg.buff)); break;
@@ -267,12 +267,12 @@ void togglePlay(MusicPlayer *self, int arg) {
   }
 }
 
-void toggleMute(MusicPlayer *self, int arg) {
+void toggleMute(ToneGenerator *self, int arg) {
   if (arg) {
-    tg.mute = 1;
+    self->mute = 1;
     SCI_WRITE(&sci0, "Muted\n");
   } else {
-    tg.mute = 0;
+    self->mute = 0;
     SCI_WRITE(&sci0, "Unmuted\n");
   }
 }
