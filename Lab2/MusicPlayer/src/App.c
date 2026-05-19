@@ -17,6 +17,19 @@ extern Serial sci0;
 extern SysIO sio0;
 extern Button btn;
 
+/*
+När man använder USER-knappen slutar vissa delar av programmet att fungera, till synes slumpmässigt. 
+Jag ser att ni använder ABORT här och var, men det måste man vara VÄLDIGT försiktig med! 
+Om en schemalagd process redan har dispatchats och man gör ABORT med den processens identifierare kan en annan process bli aborterad. 
+Man kan avsluta processer på andra sätt än med ABORT (exempel finns i koden från Exercise-03).
+
+Det går dessutom fortfarande att få lampan och melodin att bli 
+osynkroniserade (detta testade jag med tempoändringar via tangentbordet, 
+ex. från 120 till 77 under långa/korta noter).
+
+Ny deadline onsdag kl. 23:59.
+*/
+
 /* Frekvens "indices" */
 static int frequencies[]  = {0,2,4,0,0,2,4,0,4,5,7,4,5,7,7,9,
                              7,5,4,0,7,9,7,5,4,0,0,-5,0,0,-5,0};
@@ -157,13 +170,20 @@ int getPeriods(int index) {
 }
 
 void setTempo(MusicPlayer *self, int arg) {
-  ABORT(self->ledPending);
-  self->ledPending = NULL;
-  if (arg <= MAX_TEMPO && arg >= MIN_TEMPO) self->tempo = arg;
-
-  char buff[16];
-  snprintf(buff, sizeof(buff), "Tempo: %d bpm\n", self->tempo);
-  SCI_WRITE(&sci0, buff);
+  if (arg <= MAX_TEMPO && arg >= MIN_TEMPO) {
+    if (!self->play) {
+      self->tempo = arg;
+      char buff[32];
+      snprintf(buff, sizeof(buff), "Tempo: %d bpm\n", self->tempo);
+      SCI_WRITE(&sci0, buff);
+    } else {
+      self->tempoNext = arg;
+      self->tempoPending = 1;
+      char buff[64];
+      snprintf(buff, sizeof(buff), "Tempo will change to %d bpm on next beat\n", arg);
+      SCI_WRITE(&sci0, buff);
+    }
+  }
 }
 
 void setKey(MusicPlayer *self, int arg) {
@@ -217,6 +237,11 @@ void silence(ToneGenerator *self, int arg) {
 }
 
 void ledBeat(MusicPlayer * self, int arg){
+  if (self->tempoPending) {
+    self->tempo = self->tempoNext;
+    self->tempoPending = 0;
+  }
+
   Time beat = MSEC(60000 / self->tempo);
 
   SIO_WRITE(&sio0, 0);
