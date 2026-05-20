@@ -17,19 +17,6 @@ extern Serial sci0;
 extern SysIO sio0;
 extern Button btn;
 
-/*
-När man använder USER-knappen slutar vissa delar av programmet att fungera, till synes slumpmässigt.
-Jag ser att ni använder ABORT här och var, men det måste man vara VÄLDIGT försiktig med!
-Om en schemalagd process redan har dispatchats och man gör ABORT med den processens identifierare kan en annan process bli aborterad.
-Man kan avsluta processer på andra sätt än med ABORT (exempel finns i koden från Exercise-03).
-
-Det går dessutom fortfarande att få lampan och melodin att bli
-osynkroniserade (detta testade jag med tempoändringar via tangentbordet,
-ex. från 120 till 77 under långa/korta noter).
-
-Ny deadline onsdag kl. 23:59.
-*/
-
 /* Frekvens "indices" */
 static int frequencies[]  = {0,2,4,0,0,2,4,0,4,5,7,4,5,7,7,9,
                              7,5,4,0,7,9,7,5,4,0,0,-5,0,0,-5,0};
@@ -70,14 +57,8 @@ void sendCan(int m_id, int n_id, int len, char *buffer) {
   msg.nodeId = n_id;
   msg.length = len;
 
-  if (buffer) {
-    for (int i = 0; i < len; i++) {
-      msg.buff[i] = buffer[i];
-    }
-  } else {
-    for (int i = 0; i < len; i++) {
-      msg.buff[i] = 0;
-    }
+  for (int i = 0; i < len; i++) {
+    msg.buff[i] = buffer[i];
   }
   msg.buff[len] = 0;
 
@@ -104,7 +85,8 @@ void reader(App *self, int c) {
     break;
 
   case MODEKEY:
-    if (self->mode = !self->mode) SCI_WRITE(&sci0, "Musician mode!\n");
+    self->mode = !self->mode;
+    if (self->mode) SCI_WRITE(&sci0, "Musician mode!\n");
     else SCI_WRITE(&sci0, "Conductor mode!\n");
     memset(self->buffer, 0, sizeof(self->buffer));
     self->cnt = 0;
@@ -176,23 +158,13 @@ int getPeriods(int index) {
 }
 
 void setTempo(MusicPlayer *self, int arg) {
-  if (arg <= MAX_TEMPO && arg >= MIN_TEMPO) {
-    if (!self->play) {
-      self->tempo = arg;
-      char buff[32];
-      snprintf(buff, sizeof(buff), "Tempo: %d bpm\n", self->tempo);
-      SCI_WRITE(&sci0, buff);
-    } else {
-      self->tempoNext = arg;
-      self->tempoPending = 1;
-      if (!self->ledPending) {
-        self->ledPending = ASYNC(self, ledBeat, 0);
-      }
-      char buff[64];
-      snprintf(buff, sizeof(buff), "Tempo will change to %d bpm on next beat\n", arg);
-      SCI_WRITE(&sci0, buff);
-    }
-  }
+  self->led_gen++;
+  self->led_pending = NULL;
+  if (arg <= MAX_TEMPO && arg >= MIN_TEMPO) self->tempo = arg;
+
+  char buff[16];
+  snprintf(buff, sizeof(buff), "Tempo: %d bpm\n", self->tempo);
+  SCI_WRITE(&sci0, buff);
 }
 
 void setKey(MusicPlayer *self, int arg) {
@@ -233,7 +205,6 @@ void setTone(ToneGenerator *self, int arg) {
   // SIO_WRITE(&sio0, 0);
   // Om toneGenerator inte finns i kön
   if (!self->pending) self->pending = SEND(USEC(self->period), USEC(10), self, toneGenerator, 0);
-  if (!mp.ledPending) mp.ledPending = ASYNC(&mp, ledBeat, 0);
 }
 
 void silence(ToneGenerator *self, int arg) {
@@ -246,22 +217,19 @@ void silence(ToneGenerator *self, int arg) {
 }
 
 void ledBeat(MusicPlayer * self, int arg){
-  if (self->tempoPending) {
-    self->tempo = self->tempoNext;
-    self->tempoPending = 0;
-  }
+  if (arg != self->led_gen) return;
 
-  Time beat = MSEC(60000 / self->tempo);
+  Time beat = MSEC(60000) / self->tempo;
 
   SIO_WRITE(&sio0, 0);
-  SEND(beat / 2, USEC(10), self, ledOff, 0);
-  self->ledPending = NULL;
-  if (self->play) {
-    self->ledPending = SEND(beat, USEC(10), self, ledBeat, 0);
-  }
+
+  SEND(beat / 2, USEC(10), self, ledOff, arg);
+
+  self->led_pending = SEND(beat, USEC(10), self, ledBeat, arg);
 }
 
 void ledOff(MusicPlayer * self, int arg){
+  // Lägga in generationing här med?
   SIO_WRITE(&sio0, 1);
 }
 
@@ -288,7 +256,12 @@ void playNote(MusicPlayer *self, int arg) {
   SEND(0, USEC(10), &tg, setTone, getPeriods(frequencies[i] + self->key));
   SEND(play_time, gap_time, &tg, silence, 0);
   self->index = (self->index + 1) % 32;
-  if (self->play) SEND(next_start, next_stop, self, playNote, 0);
+  if (self->play) {
+    SEND(next_start, next_stop, self, playNote, 0);
+    if (!self->led_pending) {
+      self->led_pending = SEND(next_start, next_stop, self, ledBeat, self->led_gen);
+    }
+  }
 }
 
 void togglePlay(MusicPlayer *self, int arg) {
@@ -296,16 +269,9 @@ void togglePlay(MusicPlayer *self, int arg) {
     SCI_WRITE(&sci0, "Playback started\n");
     if (!self->play) ASYNC(self, playNote, 0);
     self->play = 1;
-    if (!self->ledPending) {
-      self->ledPending = ASYNC(self, ledBeat, 0);
-    }
   } else {
     self->play = 0;
     SCI_WRITE(&sci0, "Playback stopped\n");
-    if (self->ledPending) {
-      ABORT(self->ledPending);
-      self->ledPending = NULL;
-    }
     SIO_WRITE(&sio0, 1);
   }
 }
@@ -339,7 +305,10 @@ void SioCallback(Button *self, int arg) {
 
   T_RESET(&self->timer_p);
   int press_ms = since_last_p / 100;           // Inter-press interval
-  ABORT(self->pending);
+  if (self->pending) {
+    ABORT(self->pending);
+    self->pending = NULL;
+  }
 
   char buffer[64];
 

@@ -46,9 +46,8 @@ typedef struct {
   int tempo;
   int index;
   int play;
-  Msg ledPending;
-  int tempoPending;
-  int tempoNext;
+  int led_gen;
+  Msg led_pending;
 } MusicPlayer;
 
 typedef struct {
@@ -76,7 +75,7 @@ typedef struct {
   { initObject(), 0, 0 }
 
 #define initMusicPlayer()                                                              \
-  { initObject(), 0, 120, 0 , 0, 0, 0, 0}
+  { initObject(), 0, 120, 0, 0, 0, 0 }
 
 #define initToneGenerator()                                                              \
   { initObject(), 0, 3, 1203, 1, 0, 0 }
