@@ -18,13 +18,13 @@ extern SysIO sio0;
 extern Button btn;
 
 /*
-När man använder USER-knappen slutar vissa delar av programmet att fungera, till synes slumpmässigt. 
-Jag ser att ni använder ABORT här och var, men det måste man vara VÄLDIGT försiktig med! 
-Om en schemalagd process redan har dispatchats och man gör ABORT med den processens identifierare kan en annan process bli aborterad. 
+När man använder USER-knappen slutar vissa delar av programmet att fungera, till synes slumpmässigt.
+Jag ser att ni använder ABORT här och var, men det måste man vara VÄLDIGT försiktig med!
+Om en schemalagd process redan har dispatchats och man gör ABORT med den processens identifierare kan en annan process bli aborterad.
 Man kan avsluta processer på andra sätt än med ABORT (exempel finns i koden från Exercise-03).
 
-Det går dessutom fortfarande att få lampan och melodin att bli 
-osynkroniserade (detta testade jag med tempoändringar via tangentbordet, 
+Det går dessutom fortfarande att få lampan och melodin att bli
+osynkroniserade (detta testade jag med tempoändringar via tangentbordet,
 ex. från 120 till 77 under långa/korta noter).
 
 Ny deadline onsdag kl. 23:59.
@@ -70,8 +70,14 @@ void sendCan(int m_id, int n_id, int len, char *buffer) {
   msg.nodeId = n_id;
   msg.length = len;
 
-  for (int i = 0; i < len; i++) {
-    msg.buff[i] = buffer[i];
+  if (buffer) {
+    for (int i = 0; i < len; i++) {
+      msg.buff[i] = buffer[i];
+    }
+  } else {
+    for (int i = 0; i < len; i++) {
+      msg.buff[i] = 0;
+    }
   }
   msg.buff[len] = 0;
 
@@ -179,6 +185,9 @@ void setTempo(MusicPlayer *self, int arg) {
     } else {
       self->tempoNext = arg;
       self->tempoPending = 1;
+      if (!self->ledPending) {
+        self->ledPending = ASYNC(self, ledBeat, 0);
+      }
       char buff[64];
       snprintf(buff, sizeof(buff), "Tempo will change to %d bpm on next beat\n", arg);
       SCI_WRITE(&sci0, buff);
@@ -224,7 +233,7 @@ void setTone(ToneGenerator *self, int arg) {
   // SIO_WRITE(&sio0, 0);
   // Om toneGenerator inte finns i kön
   if (!self->pending) self->pending = SEND(USEC(self->period), USEC(10), self, toneGenerator, 0);
-  if (!mp.ledPending) ASYNC(&mp, ledBeat, 0);
+  if (!mp.ledPending) mp.ledPending = ASYNC(&mp, ledBeat, 0);
 }
 
 void silence(ToneGenerator *self, int arg) {
@@ -246,7 +255,10 @@ void ledBeat(MusicPlayer * self, int arg){
 
   SIO_WRITE(&sio0, 0);
   SEND(beat / 2, USEC(10), self, ledOff, 0);
-  if(self->play) self->ledPending = SEND(beat, USEC(10), self, ledBeat, 0);
+  self->ledPending = NULL;
+  if (self->play) {
+    self->ledPending = SEND(beat, USEC(10), self, ledBeat, 0);
+  }
 }
 
 void ledOff(MusicPlayer * self, int arg){
@@ -284,10 +296,16 @@ void togglePlay(MusicPlayer *self, int arg) {
     SCI_WRITE(&sci0, "Playback started\n");
     if (!self->play) ASYNC(self, playNote, 0);
     self->play = 1;
-    ASYNC(self, ledBeat, 0);
+    if (!self->ledPending) {
+      self->ledPending = ASYNC(self, ledBeat, 0);
+    }
   } else {
     self->play = 0;
     SCI_WRITE(&sci0, "Playback stopped\n");
+    if (self->ledPending) {
+      ABORT(self->ledPending);
+      self->ledPending = NULL;
+    }
     SIO_WRITE(&sio0, 1);
   }
 }
