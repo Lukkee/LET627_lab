@@ -58,7 +58,7 @@ void sendCan(int m_id, int n_id, int len, char *buffer) {
   msg.length = len;
 
   for (int i = 0; i < len; i++) {
-    msg.buff[i] = buffer[i];
+    msg.buff[i] = buffer ? buffer[i] : 0;
   }
   msg.buff[len] = 0;
 
@@ -99,7 +99,7 @@ void reader(App *self, int c) {
       && c != VOLKEY
       && c != MUTEKEY
       && c != PLAYKEY
-      && self->cnt < 11) { /* FORTSÄTT SKRIVA */
+      && self->cnt < 7) { /* FORTSÄTT SKRIVA */
         self->buffer[self->cnt] = c;    // spara char till buffer[cnt]
         self->cnt++;                    // öka cnt
       }
