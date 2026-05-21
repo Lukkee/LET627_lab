@@ -62,11 +62,5 @@ The led will flash with the tempo while playback is active.
 
 ## Changes
 ### Since last submission
-#### Part of return
-- Revised: method used to abort led when changing tempo, now using generationing, returning if the generation isn't correct, and continuing after catching up.
-- Added: check for button pending flag before aborting message, which allows button to be pressed without the program messing up.
-#### Found bugs
-- Changed: the if condition in reader from `if (mode = !mode){...}` to `mode = !mode; if (mode){...}` for better reliability.
-- Changed: moved toggleMute from MusicPlayer to ToneGenerator.
-- Changed: buffer cap for integer input now equal to CAN length cap
-
+- Fixed: press-and-hold never went into 2s mode, now it does
+- Fixed: button-trigger initialized as rising-edge, changed to falling-edge

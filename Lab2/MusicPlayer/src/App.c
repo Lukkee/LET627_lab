@@ -292,6 +292,7 @@ void checkHold(Button *self, int arg) {
     SCI_WRITE(&sci0, "ENTERED PRESS-AND-HOLD mode!\n");
     self->pending = AFTER(SEC(1), self, checkHold, 2);
   } else if (self->pressed) {
+    self->mode = 2;
     SCI_WRITE(&sci0, "Release to reset tempo!\n");
   }
 }
@@ -328,7 +329,7 @@ void SioCallback(Button *self, int arg) {
       if (self->mode == 2) ASYNC(&mp, setTempo, 120);
       self->mode = 0;
     } else {                                      // Om checkHold ej gått igenom
-      if (diff_ms < 3000) {                  // Om intervallet inte för högt
+      if (diff_ms < 3000) {                       // Om intervallet inte för högt
         snprintf(buffer, sizeof(buffer), "intervall: %dms\n", (int)diff_ms);
         SCI_WRITE(&sci0, buffer);
         self->history[0] = self->history[1];
@@ -367,7 +368,7 @@ void startApp(App *self, int arg) {
   SCI_WRITE(&sci0, "Cool musikspelare\n");
 
   SIO_INIT(&sio0);
-  SIO_TRIG(&sio0, 1);
+  SIO_TRIG(&sio0, 0);
   SIO_WRITE(&sio0, 1);
 
   T_RESET(&btn.timer);
